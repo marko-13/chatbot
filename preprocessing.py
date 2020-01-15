@@ -7,6 +7,7 @@ import time
 
 nltk.download('wordnet')
 nltk.download('stopwords')
+nltk.download('punkt')
 
 
 def lemmatize_tokens(tokens):
