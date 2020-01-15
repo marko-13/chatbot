@@ -83,7 +83,11 @@ def preprocess_dataset(dataset, lemmatize=False, remove_stopwords=False, measure
             else:
                 corpus_histogram[t] = 1
 
-    return tokens, corpus_histogram
+        # Add to returning dataset
+
+        processed_dataset[key] = [tokens, answer]
+
+    return processed_dataset, corpus_histogram
 
 
 
