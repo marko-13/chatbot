@@ -1,6 +1,10 @@
 #from ime_filea import ime_funkcije
 import csv
-import preprocessing
+
+# Local imports
+from preprocessing import preprocess_dataset, preprocess_input
+
+from nearest_neighbours import KNN
 
 def index_dataset():
     dict = {}
@@ -20,16 +24,9 @@ def index_dataset():
                 pom.append(row[1])
                 pom.append(row[2])
 
-                dict.update({row[0] : pom})
-        print(dict)
+                dict.update({int(row[0]) : pom})
+        # print(dict)
     return dict
-
-
-
-def index_dataset():
-    import csv
-    
-    dict = {}
     
 
 def main():
@@ -43,5 +40,27 @@ if __name__ == "__main__":
     # main()
     dict = index_dataset()
 
-    dict2 = preprocessing.preprocess_dataset(dict)
-    print(dict2)
+
+
+    # print(dict)
+    # print(dict[1])
+
+    # Initialize dataset
+    dict2, corpus = preprocess_dataset(dict, lemmatize=True, remove_stopwords=True, measure_time=True)
+
+    # print(dict2[1])
+
+    knn = KNN(dict2, corpus)
+
+    print("Type a question:")
+    q = input()
+    while q != 'quit':
+        print("Result:")
+
+        res = knn.find_nearest_neigbours(preprocess_input(q))
+
+        for r in res:
+            print(r)
+
+        print("Type a question:")
+        q = input()
