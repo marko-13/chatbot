@@ -57,7 +57,7 @@ if __name__ == "__main__":
     while q != 'quit':
         print("Result:")
 
-        res = knn.find_nearest_neigbours(preprocess_input(q))
+        res = knn.find_nearest_neigbours(preprocess_input(q), measure_time=True)
 
         for r in res:
             print(r)

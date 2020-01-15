@@ -12,6 +12,9 @@ print('\n\n')
 
 
 def lemmatize_tokens(tokens):
+    '''
+    Performs lemmatization on a list of tokens
+    '''
 
     lemmatizer = WordNetLemmatizer()
 
@@ -28,6 +31,9 @@ def lemmatize_tokens(tokens):
 
 
 def tokens_to_lower(tokens):
+    '''
+    Transforms all tokens in a list to lower case.
+    '''
     retval = []
     for t in tokens:
         retval.append(t.lower())
@@ -36,6 +42,10 @@ def tokens_to_lower(tokens):
 
 
 def token_frequency(tokens):
+    '''
+    Returns a histogram of token occurences
+    in a list.
+    '''
     token_freq = {}
     for t in tokens:
         if t in token_freq:
@@ -48,8 +58,24 @@ def token_frequency(tokens):
 
 def preprocess_dataset(dataset, lemmatize=False, remove_stopwords=False, measure_time=False):
     '''
+    Takes a dataset dictionary, performs preprocessing on it's questions,
+    which involves:
+        1. Tokenization
+        2. Lemmatization (optional)
+        3. Stop word removal (optional)
+        4. Converts all tokens to lower case
+    
+    Additional tasks:
+        - Returns a word histogram of the entire corpus
 
-    :param dataset - {key, [question, answer]}
+    Returns 2 values:
+        1. Processed dataset: {key, [term_frequencies, answer]}
+                - term frequencies: a dictionary (histogram)
+                                    of all token occurences in the
+                                    datapoint
+        2. Corpus histogram
+
+    :param dict dataset - {key, [question, answer]}
     '''
     
     corpus_histogram = {}
@@ -69,9 +95,6 @@ def preprocess_dataset(dataset, lemmatize=False, remove_stopwords=False, measure
 
         val = dataset[key] 
         question, answer = val[0], val[1]
-
-        # Convert to lower case
-        # question = question.lower()
         
         tokens = nltk.word_tokenize(question)
 
@@ -112,7 +135,15 @@ def preprocess_dataset(dataset, lemmatize=False, remove_stopwords=False, measure
 
 
 def preprocess_input(input_str, lemmatize=False, remove_stopwords=False):
+    '''
+    Takes an input string and does preprocessing on it:
+        1. Tokenization
+        2. Lemmatization
+        3. Stop word removal
+        4. Term frequency count
 
+    Return a dictionary of term frequencies for each term.
+    '''
     tokens = nltk.word_tokenize(input_str)
 
     if lemmatize:

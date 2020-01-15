@@ -4,6 +4,8 @@
 from numpy import dot
 from numpy.linalg import norm
 
+import time
+
 class KNN():
 
     def __init__(self, dataset, corpus_histogram):
@@ -56,12 +58,18 @@ class KNN():
 
 
 
-    def find_nearest_neigbours(self, input, k=10):
+    def find_nearest_neigbours(self, input, k=10, measure_time=False):
         '''
+        Takes in an input string. Vectorizes it and compares it to all
+        of the datapoints in the corpus. Returns the k closest neighbours.
+
 
         :param dict input: token frequency dictionary
 
         '''
+
+        if measure_time:
+            start = time.time()
 
         vector = self.vectorize(input)
 
@@ -81,11 +89,17 @@ class KNN():
         retval = []
         i = 0
         for res in results_sorted:
-            print(results_sorted[res])
             retval.append(self.dataset[res])
             i += 1
             if i == k:
                 break
+
+        if measure_time:
+            end = time.time()
+
+            elapsed_time = end - start
+
+            print('[KNN] Execution time [k = {}]: {:3.2f}s'.format(k, elapsed_time))
 
         return retval
 
