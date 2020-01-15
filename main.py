@@ -34,24 +34,16 @@ def main():
     txt = input("Type something: ")
     print("You wrote: " + txt)
 
-
-
-if __name__ == "__main__":
-    # main()
+    # Read dataset
     dict = index_dataset()
 
-
-
-    # print(dict)
-    # print(dict[1])
-
-    # Initialize dataset
+    # Preprocess dataset
     dict2, corpus = preprocess_dataset(dict, lemmatize=True, remove_stopwords=True, measure_time=True)
 
-    # print(dict2[1])
-
+    # Initialize KNN with given dataset
     knn = KNN(dict2, corpus)
 
+    # Main loop for user input
     print("Type a question:")
     q = input()
     while q != 'quit':
@@ -64,3 +56,10 @@ if __name__ == "__main__":
 
         print("Type a question:")
         q = input()
+
+
+
+
+if __name__ == "__main__":
+    main()
+    

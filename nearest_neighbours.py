@@ -1,6 +1,4 @@
-# from sklearn import neigbours
 
-# from scipy import spatial
 from numpy import dot
 from numpy.linalg import norm
 
