@@ -1,6 +1,5 @@
 #from ime_filea import ime_funkcije
 
-
 def main():
     print('RUN')
     txt = input("Type something: ")
