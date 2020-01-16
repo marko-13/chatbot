@@ -6,11 +6,14 @@ import time
 
 class KNN():
 
-    def __init__(self, dataset, corpus_histogram):
+    def __init__(self, dataset, corpus_histogram, measure_time=False):
 
         self.dataset = dataset
         self.corpus_histogram = corpus_histogram
         self.vectorized_dataset = {}
+
+        if measure_time:
+            start = time.time()
 
         # Vectorize the dataset
         for key in dataset.keys():
@@ -23,6 +26,13 @@ class KNN():
                 else:
                     question_vector.append(0)
             self.vectorized_dataset[key] = question_vector
+
+        if measure_time:
+            end = time.time()
+            print(f'[KNN Initialiation] Elapsed time: {end - start}s')
+
+        sample_vector = next(iter(self.vectorized_dataset.values()))
+        print(f"[KNN] Vector size: {len(sample_vector)}")
 
     def cosine(self, v1, v2):
         '''
@@ -56,13 +66,14 @@ class KNN():
 
 
 
-    def find_nearest_neigbours(self, input, k=10, measure_time=False):
+    def find_nearest_neigbours(self, input, document_ids, k=10, measure_time=False):
         '''
         Takes in an input string. Vectorizes it and compares it to all
         of the datapoints in the corpus. Returns the k closest neighbours.
 
 
         :param dict input: token frequency dictionary
+        :param list document_ids: documents to search from
 
         '''
 
@@ -73,14 +84,32 @@ class KNN():
 
         results = {}
 
+        if measure_time:
+            compute_start = time.time()
+
+        ''' ======== OLD WAY ===========
         # Compute the cos distance between the input 
         # and every question available in the corpus
         for key in self.vectorized_dataset:
             dist = self.cosine(vector, self.vectorized_dataset[key])
-            results[key] = dist
+            if dist >= 0.5:
+                results[key] = dist
+        '''
+
+        for doc in document_ids:
+            dist = self.cosine(vector, self.vectorized_dataset[doc])
+            if dist >= 0.5:
+                results[doc] = dist
+
+        if measure_time:
+            print('[KNN] Computation time: {:3.2f}s'.format((time.time() - compute_start)))
+            sort_start = time.time()
 
         # Sort results by value, descending:
         results_sorted = {k: v for k, v in sorted(results.items(), key = lambda item: item[1], reverse=True)}
+
+        if measure_time:
+            print('[KNN] Sort time: {:3.2f}'.format((time.time() - sort_start)))
 
         # Return the best k question-answer pairs
 
@@ -100,4 +129,3 @@ class KNN():
             print('[KNN] Execution time [k = {}]: {:3.2f}s'.format(k, elapsed_time))
 
         return retval
-

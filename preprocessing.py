@@ -76,6 +76,8 @@ def preprocess_dataset(dataset, lemmatize=False, remove_stopwords=False, measure
         2. Corpus histogram
 
     :param dict dataset - {key, [question, answer]}
+
+    :return dict processed_dataset - {key, [term_frequencies, answer]}
     '''
     
     corpus_histogram = {}
@@ -98,18 +100,19 @@ def preprocess_dataset(dataset, lemmatize=False, remove_stopwords=False, measure
         
         tokens = nltk.word_tokenize(question)
 
+        # Convert to lower case
+        tokens = tokens_to_lower(tokens)
+
         if lemmatize:
             tokens = lemmatize_tokens(tokens)
         
         if remove_stopwords:
-            tokens = [token for token in tokens if token not in stopwords.words('english')]
+            tokens = [token for token in tokens if not token in stopwords.words('english')]
         
         if measure_time:
             end = time.time()
             global_time += (end - start)
 
-        # Convert to lower case
-        tokens = tokens_to_lower(tokens)
 
         # Update the global corpus
 
@@ -128,7 +131,7 @@ def preprocess_dataset(dataset, lemmatize=False, remove_stopwords=False, measure
         processed_dataset[key] = [token_freq, answer]
 
     if measure_time:
-        print(f'Time elapsed is: {global_time}')
+        print(f'[Dataset Preprocessing] Time elapsed is: {global_time}')
 
     return processed_dataset, corpus_histogram
 
@@ -146,10 +149,13 @@ def preprocess_input(input_str, lemmatize=False, remove_stopwords=False):
     '''
     tokens = nltk.word_tokenize(input_str)
 
+    tokens = tokens_to_lower(tokens)
+
     if lemmatize:
         lemmatize_tokens(tokens)
     if remove_stopwords:
-        tokens = [token for token in tokens if token not in stopwords.words('english')]
+        tokens = [token for token in tokens if not token in stopwords.words('english')]
+
 
     token_freq = token_frequency(tokens)
 
