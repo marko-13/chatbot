@@ -14,10 +14,6 @@ from test import testing
 
 from bot import QnABot
 
-# TODO:
-# koristiti biblioteke
-# https://scikit-learn.org/stable/modules/neighbors.html
-
 
 def save_object(object, filename):
     with open(filename, 'wb') as output:
@@ -112,7 +108,6 @@ if __name__ == "__main__":
     # main()
 
     dict = index_dataset()
-    # dataset, corpus = preprocess_dataset(dict, lemmatize=True, remove_stopwords=True, measure_time=True)
     # print((corpus))
     # print(dict)
     # testing(dict)
@@ -124,12 +119,34 @@ if __name__ == "__main__":
         bot = load_object('./objects/bot_nn10.pickle')
     else:
         bot = QnABot()
-        bot.set_dataset(dict)
+
+        # use corpus to find typos in questions
+        dataset, corpus = preprocess_dataset(dict, lemmatize=False, remove_stopwords=False, measure_time=True)
+
+        bot.set_dataset(dict, corpus)
         save_object(bot, './objects/bot_nn10.pickle')
 
-    print("Unesi pitanje:\n")
-    q = input()
+    q = ""
     while q != 'q':
-        bot.process_input(q)
+        q = input("Your question(to quit enter q): ")
+
+        # check for typos
+        flag_typos = True
+        all_incorrect = True
+        # TODO
+        # proveri da li je samo typo ili je cela recenica neka brljotina, ako je samo typo uradi levenshteina
+        split_str = q.split(" ")
+        for word in split_str:
+            if word.lower() in bot.corpus:
+                flag_typos = False
+
+        if flag_typos:
+            print("No suitable answers found.\n")
+            continue
+
+        ids, ans, question, flag = bot.process_input(q)
+        if flag:
+            print(f"{ids}, {question} - {ans}")
+        else:
+            print(f"No suitable answer found")
         # print(bot.process_input(q))
-        q = input()

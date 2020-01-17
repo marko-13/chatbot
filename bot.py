@@ -5,9 +5,10 @@ from sklearn.neighbors import NearestNeighbors
 
 from time import time
 
+
 class QnABot():
 
-    def set_dataset(self, dataset):
+    def set_dataset(self, dataset, corpus):
         '''
 
         :param dict dataset: {key, [question, answer]}
@@ -30,6 +31,7 @@ class QnABot():
 
         print(start - time())
 
+        self.corpus = corpus
     
     def process_input(self, Y):
         '''
@@ -55,9 +57,15 @@ class QnABot():
             
             answers.append(self.dataset[id][1])
 
-        # print(answers)
+        ok_score = False
+        for dist in distances[0]:
+            if(dist) <= 2:
+                ok_score = True
+                # return question id, answer, question, and flag
+                return ids[0][0], answers[0], self.dataset[ids[0][0]][0], ok_score
 
-        return ids, answers
+
+        return ids[0][0], answers[0], self.dataset[id][0], ok_score
         
 
     def _extract_questions(self, dataset):
