@@ -10,6 +10,8 @@ from nearest_neighbours import KNN
 
 from indexing import Indexer
 
+from test import testing
+
 # TODO:
 # koristiti biblioteke
 # https://scikit-learn.org/stable/modules/neighbors.html
@@ -41,12 +43,12 @@ def index_dataset():
                     continue
                 pom = []
                 pom.append(row[1])
-                pom.append(row[2])
-
+                pom.append(row[2].rstrip())
                 dict.update({int(row[0]) : pom})
         # print(dict)
     return dict
     
+
 
 def main():
 
@@ -63,7 +65,6 @@ def main():
     else:
         indexer = Indexer(dataset, measure_time=True)
         save_object(indexer, './objects/indexer.pickle')
-
 
     #Load or create KNN
     if os.path.exists('./objects/knn.pickle'):
@@ -89,6 +90,7 @@ def main():
 
         containing_docs = indexer.retrieve_documents(terms_to_search_for, measure_time=True)
 
+
         res = knn.find_nearest_neigbours(processed_input, containing_docs , k=10, measure_time=True)
 
         print("\nResults:\n")
@@ -106,5 +108,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-    
+    # main()
+
+    dict = index_dataset()
+    # dataset, corpus = preprocess_dataset(dict, lemmatize=True, remove_stopwords=True, measure_time=True)
+    # print((corpus))
+    # print(dict)
+    testing(dict)

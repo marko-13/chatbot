@@ -5,6 +5,8 @@ from nltk.corpus import stopwords
 
 import time
 
+
+
 nltk.download('wordnet')
 nltk.download('stopwords')
 nltk.download('punkt')
