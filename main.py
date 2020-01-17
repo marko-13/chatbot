@@ -12,6 +12,8 @@ from indexing import Indexer
 
 from test import testing
 
+from bot import QnABot
+
 # TODO:
 # koristiti biblioteke
 # https://scikit-learn.org/stable/modules/neighbors.html
@@ -90,7 +92,6 @@ def main():
 
         containing_docs = indexer.retrieve_documents(terms_to_search_for, measure_time=True)
 
-
         res = knn.find_nearest_neigbours(processed_input, containing_docs , k=10, measure_time=True)
 
         print("\nResults:\n")
@@ -114,4 +115,21 @@ if __name__ == "__main__":
     # dataset, corpus = preprocess_dataset(dict, lemmatize=True, remove_stopwords=True, measure_time=True)
     # print((corpus))
     # print(dict)
-    testing(dict)
+    # testing(dict)
+
+
+
+    # Load or create indexer
+    if os.path.exists('./objects/bot_nn10.pickle'):
+        bot = load_object('./objects/bot_nn10.pickle')
+    else:
+        bot = QnABot()
+        bot.set_dataset(dict)
+        save_object(bot, './objects/bot_nn10.pickle')
+
+    print("Unesi pitanje:\n")
+    q = input()
+    while q != 'q':
+        bot.process_input(q)
+        # print(bot.process_input(q))
+        q = input()
