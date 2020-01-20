@@ -124,7 +124,7 @@ if __name__ == "__main__":
         # use corpus to find typos in questions
         dataset, corpus = preprocess_dataset(dict, lemmatize=False, remove_stopwords=False, measure_time=True)
 
-        bot.set_dataset(dict, corpus)
+        bot.set_dataset(dict, dataset, corpus)
         save_object(bot, './objects/bot_nn10.pickle')
 
     q = ""
@@ -149,9 +149,15 @@ if __name__ == "__main__":
             print("No suitable answers found.\n")
             continue
 
-        ids, ans, question, flag = bot.process_input(q)
-        if flag:
-            print(f"{ids}, {question} - {ans}")
-        else:
-            print(f"No suitable answer found")
+        # ids, ans, question, flag = bot.process_input(q)
+        # if flag:
+        #     print(f"{ids}, {question} - {ans}")
+        # else:
+        #     print(f"No suitable answer found")
         # print(bot.process_input(q))
+
+        for ret in bot.process_input(q):
+            print(f"{ret[0]})")
+            print(ret[1])
+            print()
+            print()
