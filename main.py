@@ -3,6 +3,7 @@ import csv
 import os
 import pickle
 
+
 # Local imports
 from preprocessing import preprocess_dataset, preprocess_input
 
@@ -129,6 +130,10 @@ if __name__ == "__main__":
     q = ""
     while q != 'q':
         q = input("Your question(to quit enter q): ")
+
+
+        # TODO
+        # tokemnizuj input q i za svaku rec nadji najblizu
 
         # check for typos
         flag_typos = True
