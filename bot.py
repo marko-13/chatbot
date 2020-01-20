@@ -5,10 +5,17 @@ from sklearn.neighbors import NearestNeighbors
 
 from time import time
 
+from gensim.models import Word2Vec
+
+# Local imports
+
+from preprocessing import preprocess_input, preprocess_dataset
+
+
 
 class QnABot():
 
-    def set_dataset(self, dataset, corpus):
+    def set_dataset(self, dataset, processed_dataset, corpus):
         '''
 
         :param dict dataset: {key, [question, answer]}
@@ -32,6 +39,16 @@ class QnABot():
         print(start - time())
 
         self.corpus = corpus
+
+        # Extract token list per question
+        # for the w2v model
+        token_list = []
+        for question in list_of_q:
+            token_list.append(preprocess_input(question))
+
+        # Train w2v model
+        self.w2v_model = Word2Vec(token_list, size=100, window=3, min_count=0, workers=4, iter=10)
+
     
     def process_input(self, Y):
         '''
@@ -39,7 +56,10 @@ class QnABot():
         :param string y: Input STRING
         '''
 
-        # start = time()
+        start = time()
+
+        # Save the raw input string
+        raw_input = Y
 
         Y = self.vectorizer.transform([Y])
 
@@ -47,26 +67,44 @@ class QnABot():
 
         distances, ids = self.nbrs.kneighbors(y_tf_idf.todense()) 
 
-        # print(start - time())
-
-        answers = []
-        
+        # Rate questions by their similarity scores using w2v
+        q_similarity_scores = {}
+        input_tokens = preprocess_input(raw_input)
         for id in ids[0]:
-            print(f'{self.dataset[id][0]}')
-            print(f'{id} - {self.dataset[id][1]}\n\n')
+            question = self.dataset[id][0]
+            sum_similarities = 0
             
-            answers.append(self.dataset[id][1])
+            question = preprocess_input(question)
+            
+            for word in input_tokens:
 
-        ok_score = False
-        for dist in distances[0]:
-            if(dist) <= 2:
-                ok_score = True
-                # return question id, answer, question, and flag
-                return ids[0][0], answers[0], self.dataset[ids[0][0]][0], ok_score
+                for q_word in question:
+                    try:
+                        # Find the maximum similarity of each input word
+                        # to each word in the question
+                        sims = [self.w2v_model.wv.similarity(word, q_word)]
+                        sum_similarities += max(sims)
+                    except KeyError:
+                        print(f"Word {q_word} not in dataset")
+            
+            # Associate every question with it's similarity
+            # to the input
+            q_similarity_scores[id] = sum_similarities
 
+        # Sort question IDs by their similarity to the input
+        sorted_by_sim = {id: sim for id, sim in sorted(q_similarity_scores.items(), key = lambda x: x[1], reverse=True) }
 
-        return ids[0][0], answers[0], self.dataset[id][0], ok_score
-        
+        # Return the top 10 results
+        retval = []
+        i = 0
+        for res in sorted_by_sim:
+            retval.append((res, self.dataset[res]))
+            i += 1
+            if i == 10:
+                break
+
+        return retval
+
 
     def _extract_questions(self, dataset):
         ret = []
