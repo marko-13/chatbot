@@ -126,7 +126,7 @@ if __name__ == "__main__":
         # use corpus to find typos in questions
         dataset, corpus = preprocess_dataset(dict, lemmatize=False, remove_stopwords=False, measure_time=True)
 
-        bot.set_dataset(dict, dataset, corpus, algorithm='doc2vec')
+        bot.set_dataset(dict, dataset, corpus, algorithm='word2vec')
         save_object(bot, './objects/bot_nn10.pickle')
 
     q = ""
