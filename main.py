@@ -154,17 +154,21 @@ def run_comparison_testing(dataset_dict, wanted_questions):
         print(positions)
         print("\n")
 
-        # print("Word2Vec output:")
-        # for id in ret_w2v_ids:
-        #     print(dataset_dict[id][1])
-        #     print('\n')
-        # print('==============\n')
+        print(id_list[0])
 
-        # print("Doc2Vec output:")
-        # for id in ret_d2v_ids:
-        #     print(dataset_dict[id][1])
-        #     print('\n')
-        # print('==============\n')
+        print("Word2Vec output:")
+        for id in ret_w2v_ids:
+            print(id)
+            print(dataset_dict[id][0])
+            print('\n')
+        print('==============\n')
+
+        print("Doc2Vec output:")
+        for id in ret_d2v_ids:
+            print(id)
+            print(dataset_dict[id][0])
+            print('\n')
+        print('==============\n')
         
         results.append((id_list[0], positions))
 
@@ -219,13 +223,13 @@ if __name__ == "__main__":
     wanted_questions = [("Is fixed annuity safe?", [15453]), 
                         ("Can I opt out of health insurance", [17884]), 
                         ("How to become a medicare expert", [22917, 22918]), 
-                        ("Can you deduct disability insurance", [25381]),
+                        ("Can disability insurance be deducted", [25381]),
                         ("Is scuba diving covered by life insurance", [num for num in range(20565, 20569)]),
                         ("is there life insurance for elderly", [25379, 25380]),
-                        ("insurance for auto renting in the us", [9783]),
+                        ("blanket life insurance", [9783]),
                         ("What is jumbo life insurance", [num for num in range(25650, 25654)]),
                         ("can i get a life insurance policy from my parents", [num for num in range(11963, 11967)]),
-                        ("is cashing out a 401k possible", [49, 50])]
+                        ("cashing out a 401k", [49, 50])]
 
     run_comparison_testing(dict, wanted_questions)
 
