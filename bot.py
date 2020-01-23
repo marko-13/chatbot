@@ -22,7 +22,7 @@ class QnABot():
     #   2. stopword removal
     #   3. conversion to lowercase
     # 
-    def set_dataset(self, dataset, processed_dataset, corpus, algorithm='word2vec'):
+    def set_dataset(self, dataset, processed_dataset, corpus, algorithm='word2vec', lemmatize=True):
         '''
         Extracts the questions from the dataset. Runs preprocessing on them
         (which includes tokenization and convesion to lowercase).
@@ -38,6 +38,8 @@ class QnABot():
         '''
 
         self.algorithm = algorithm
+
+        self.lemmatize = lemmatize
 
         self.dataset = dataset
 
@@ -77,7 +79,7 @@ class QnABot():
         for key in list_of_q:
             # token_list.append(preprocess_input(question))
             question = list_of_q[key]
-            tokens = preprocess_input(question)
+            tokens = preprocess_input(question, lemmatize=self.lemmatize)
             token_dict[key] = tokens
 
 
@@ -157,14 +159,14 @@ class QnABot():
         '''
         # Rate questions by their similarity scores using w2v
         q_similarity_scores = {}
-        input_tokens = preprocess_input(raw_input)
+        input_tokens = preprocess_input(raw_input, lemmatize=self.lemmatize)
         # print("\n\nAm here\n\n")
         if self.algorithm == 'word2vec':
             for id in ids:
                 question = self.dataset[id][0]
                 sum_similarities = 0
                 
-                question = preprocess_input(question)
+                question = preprocess_input(question, lemmatize=self.lemmatize)
 
                 
                 for word in input_tokens:
@@ -197,13 +199,13 @@ class QnABot():
             return retval
         elif self.algorithm == 'doc2vec':
             input_tokens = list(input_tokens.keys())
-            print(input_tokens)
+            # print(input_tokens)
             doc_vec = self.model.infer_vector(input_tokens, alpha=0.01, epochs=100)
             # print(self.model.docvecs[13])
 
             sims = self.model.docvecs.most_similar([doc_vec])
 
-            print(sims)
+            # print(sims)
 
             # Return the top 10 results
             retval = []
@@ -235,7 +237,7 @@ class QnABot():
                 question = self.dataset[id][0]
                 sum_similarities = 0
 
-                question = preprocess_input(question)
+                question = preprocess_input(question, lemmatize=self.lemmatize)
 
                 for word in input_tokens:
 
@@ -255,6 +257,8 @@ class QnABot():
             # Sort question IDs by their similarity to the input
             sorted_by_sim = {id: sim for id, sim in
                              sorted(q_similarity_scores.items(), key=lambda x: x[1], reverse=True)}
+
+            print(sorted_by_sim)
 
             # Return the top 10 results
             retval = []
