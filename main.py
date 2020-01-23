@@ -2,6 +2,8 @@
 import csv
 import os
 import pickle
+import datetime
+from matplotlib import pyplot as plt
 
 
 # Local imports
@@ -42,6 +44,8 @@ def get_bot(dataset_dict, algorithm='word2vec' ):
         bot.set_dataset(dataset_dict, dataset, corpus, algorithm=algorithm)
         save_object(bot, f'./objects/bot_{algorithm}.pickle')
 
+    return bot
+
 
 def index_dataset():
     dict = {}
@@ -66,58 +70,54 @@ def index_dataset():
     
 
 
-# def main():
+def main(dict):
 
-#     # Read dataset
-#     dict = index_dataset()
+    print(datetime.datetime.now())
 
-#     # Preprocess dataset if needed
-#     if not os.path.exists('./objects/indexer.pickle') or not os.path.exists('./objects/knn.pickle'):
-#         dataset, corpus = preprocess_dataset(dict, lemmatize=True, remove_stopwords=True, measure_time=True)
+    # Load or create indexer
+    if os.path.exists('./objects/bot_nn10.pickle'):
+        bot = load_object('./objects/bot_nn10.pickle')
+    else:
+        bot = QnABot()
 
-#     # Load or create indexer
-#     if os.path.exists('./objects/indexer.pickle'):
-#         indexer = load_object('./objects/indexer.pickle')
-#     else:
-#         indexer = Indexer(dataset, measure_time=True)
-#         save_object(indexer, './objects/indexer.pickle')
+        # use corpus to find typos in questions
+        dataset, corpus = preprocess_dataset(dict, lemmatize=False, remove_stopwords=False, measure_time=True)
 
-#     #Load or create KNN
-#     if os.path.exists('./objects/knn.pickle'):
-#         knn = load_object('./objects/knn.pickle')
-#     else:
-#         # Initialize KNN with given dataset
-#         knn = KNN(dataset, corpus, measure_time=True)
-#         save_object(knn, './objects/knn.pickle')
-
-#     # Main loop for user input
-#     print("Type a question:")
-#     q = input()
-#     while q != 'quit':
+        bot.set_dataset(dict, dataset, corpus, algorithm='word2vec')
+        save_object(bot, './objects/bot_nn10.pickle')
 
 
-#         processed_input = preprocess_input(q, lemmatize=True, remove_stopwords=True)
+    q = ""
+    while q != 'q':
+        q = input("Your question (to quit enter q): ")
 
-#         terms_to_search_for = list(processed_input.keys())
+        # check for typos
+        flag_typos = True
+        all_incorrect = True
+        # TODO
+        # proveri da li je samo typo ili je cela recenica neka brljotina, ako je samo typo uradi levenshteina
+        split_str = q.split(" ")
+        for word in split_str:
+            if word.lower() in bot.corpus:
+                flag_typos = False
 
-#         print('Terms to search for:')
-#         print(terms_to_search_for)
-#         print()
+        if flag_typos:
+            print("No suitable answers found.\n")
+            continue
 
-#         containing_docs = indexer.retrieve_documents(terms_to_search_for, measure_time=True)
+        # ids, ans, question, flag = bot.process_input(q)
+        # if flag:
+        #     print(f"{ids}, {question} - {ans}")
+        # else:
+        #     print(f"No suitable answer found")
+        # print(bot.process_input(q))
 
-#         res = knn.find_nearest_neigbours(processed_input, containing_docs , k=10, measure_time=True)
+        for ret in bot.process_input(q):
+            print(f"{ret[0]})")
+            print(ret[1])
+            print()
+            print()
 
-#         print("\nResults:\n")
-#         i = 1
-#         for r in res:
-#             print(f'#{i}')
-#             print(r)
-#             print()
-#             i += 1
-
-#         print("Type a question:")
-#         q = input()
 
 
 def run_comparison_testing(dataset_dict, wanted_questions):
@@ -148,20 +148,57 @@ def run_comparison_testing(dataset_dict, wanted_questions):
 
         results 
 
+        ret_w2v_ids = [id for id, qa_pair in ret_w2v]
+        ret_d2v_ids = [id for id, qa_pair in ret_d2v]
+        # ret_ft_ids = [id for id, qa_pair in ret_ft]
+
+        positions = []
+        
+        for alg in [ret_w2v_ids, ret_d2v_ids]:
+            try:
+                pos = alg.index(id)
+                positions.append(pos)
+            except ValueError:
+                positions.append(-1)
+
+        print(question)
+        print(positions)
+        print("\n")
+
+        print("Word2Vec output:")
+        for id in ret_w2v_ids:
+            print(dataset_dict[id][1])
+            print('\n')
+        print('==============\n')
+
+        print("Doc2Vec output:")
+        for id in ret_d2v_ids:
+            print(dataset_dict[id][1])
+            print('\n')
+        print('==============\n')
+        
+        results.append((id, positions))
+
+    print(results)
+
+    x_ax = []
+    y_ax = []
+    for id, pos in results:
+        x_ax.append(pos)
+    
+    plt.plot(list(range(len(results))), x_ax, marker="o")
+    plt.show()
+
 
 
 
 
 
 if __name__ == "__main__":
-    # main()
 
     dict = index_dataset()
-    # print((corpus))
-    # print(dict)
-    # testing(dict)
 
-
+    # main()
 
     # Load or create indexer
     if os.path.exists('./objects/bot_nn10.pickle'):
@@ -197,16 +234,10 @@ if __name__ == "__main__":
         if flag_typos:
             print("No suitable answers found.\n")
             continue
+    wanted_questions = [("Is fixed annuity safe?", 15453), \
+                        ("Can I opt out of health insurance",17884), \
+                        ("How to become a medicare expert", 22918), \
+                        ("Can you deduct disability insurance", 25381)]
 
-        # ids, ans, question, flag = bot.process_input(q)
-        # if flag:
-        #     print(f"{ids}, {question} - {ans}")
-        # else:
-        #     print(f"No suitable answer found")
-        # print(bot.process_input(q))
+    run_comparison_testing(dict, wanted_questions)
 
-        for ret in bot.process_input(q):
-            print(f"{ret[0]})")
-            print(ret[1])
-            print()
-            print()
