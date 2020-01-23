@@ -177,9 +177,22 @@ def run_comparison_testing(dataset_dict, wanted_questions):
     x_ax = []
     y_ax = []
     for id, pos in results:
-        x_ax.append(pos)
+        y_ax.append(pos)
+
+    labels = [str(q[1]) for q in wanted_questions]
     
-    plt.plot(list(range(len(results))), x_ax, marker="o")
+    x_range = list(range(len(results)))
+
+    plt.yticks(list(range(-1, 10)))
+    plt.xticks(x_range, labels)
+
+
+    
+    plt.plot(x_range, [val[0] for val in y_ax], 'o', label="Word2Vec")
+    plt.plot(x_range, [val[1] for val in y_ax], 'o', label="Doc2Vec")
+
+    plt.legend(loc="upper left")
+
     plt.show()
 
 

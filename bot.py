@@ -158,7 +158,6 @@ class QnABot():
         # Rate questions by their similarity scores using w2v
         q_similarity_scores = {}
         input_tokens = preprocess_input(raw_input)
-        print("\n\nAm here\n\n")
         if self.algorithm == 'word2vec':
             for id in ids:
                 question = self.dataset[id][0]
@@ -197,13 +196,13 @@ class QnABot():
             return retval
         elif self.algorithm == 'doc2vec':
             input_tokens = list(input_tokens.keys())
-            print(input_tokens)
+            # print(input_tokens)
             doc_vec = self.model.infer_vector(input_tokens, alpha=0.01, epochs=100)
             # print(self.model.docvecs[13])
 
             sims = self.model.docvecs.most_similar([doc_vec])
 
-            print(sims)
+            # print(sims)
 
             # Return the top 10 results
             retval = []
