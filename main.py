@@ -71,7 +71,23 @@ def index_dataset():
     
 
 
+<<<<<<< HEAD
 def main(dict, algorithm='word2vec'):
+=======
+def main(dict):
+
+    # Load or create indexer
+    if os.path.exists('./objects/bot_nn10.pickle'):
+        bot = load_object('./objects/bot_nn10.pickle')
+    else:
+        bot = QnABot()
+
+        # use corpus to find typos in questions
+        dataset, corpus = preprocess_dataset(dict, lemmatize=False, remove_stopwords=False, measure_time=True)
+
+        bot.set_dataset(dict, dataset, corpus, algorithm='word2vec')
+        save_object(bot, './objects/bot_nn10.pickle')
+>>>>>>> e8f0ca9fae9ae247a206dfcc79ad08ae5e8575d8
 
     bot = get_bot(dict, algorithm=algorithm)
 
@@ -128,8 +144,18 @@ def run_comparison_testing(dataset_dict, wanted_questions):
         # list of (id, [question, answer])
         ret_w2v = bot_w2v.process_input(question)
         ret_d2v = bot_d2v.process_input(question)
+<<<<<<< HEAD
         # ret_ft = bot_ft.process_input(question)
 
+=======
+        ret_ft = bot_ft.process_input(question)
+
+        ret_w2v_ids = [id for id, qa_pair in ret_w2v]
+        ret_d2v_ids = [id for id, qa_pair in ret_d2v]
+        ret_ft_ids = [id for id, qa_pair in ret_ft]
+
+        results 
+>>>>>>> e8f0ca9fae9ae247a206dfcc79ad08ae5e8575d8
 
         ret_w2v_ids = [id for id, qa_pair in ret_w2v]
         ret_d2v_ids = [id for id, qa_pair in ret_d2v]
@@ -200,7 +226,11 @@ def run_comparison_testing(dataset_dict, wanted_questions):
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     # print(datetime.datetime.now())
+=======
+    print(datetime.datetime.now())
+>>>>>>> e8f0ca9fae9ae247a206dfcc79ad08ae5e8575d8
 
 
     dict = index_dataset()
@@ -214,6 +244,7 @@ if __name__ == "__main__":
     
 
 
+<<<<<<< HEAD
     wanted_questions = [("Is fixed annuity safe?", [15453]), 
                         ("Can I opt out of health insurance", [17884]), 
                         ("How to become a medicare expert", [22917, 22918]), 
@@ -224,6 +255,46 @@ if __name__ == "__main__":
                         ("What is jumbo life insurance", [num for num in range(25650, 25654)]),
                         ("can i get a life insurance policy from my parents", [num for num in range(11963, 11967)]),
                         ("is cashing out a 401k possible", [49, 50])]
+=======
+    # Load or create indexer
+    if os.path.exists('./objects/bot_nn10.pickle'):
+        bot = load_object('./objects/bot_nn10.pickle')
+    else:
+        bot = QnABot()
+
+        # use corpus to find typos in questions
+        dataset, corpus = preprocess_dataset(dict, lemmatize=False, remove_stopwords=False, measure_time=True)
+
+        bot.set_dataset(dict, dataset, corpus, algorithm='fasttext')
+        save_object(bot, './objects/bot_nn10.pickle')
+
+
+    q = ""
+    while q != 'q':
+        q = input("Your question (to quit enter q): ")
+
+
+        # TODO
+        # tokemnizuj input q i za svaku rec nadji najblizu
+
+        # check for typos
+        flag_typos = True
+        all_incorrect = True
+        # TODO
+        # proveri da li je samo typo ili je cela recenica neka brljotina, ako je samo typo uradi levenshteina
+        split_str = q.split(" ")
+        for word in split_str:
+            if word.lower() in bot.corpus:
+                flag_typos = False
+
+        if flag_typos:
+            print("No suitable answers found.\n")
+            continue
+    wanted_questions = [("Is fixed annuity safe?", 15453), \
+                        ("Can I opt out of health insurance",17884), \
+                        ("How to become a medicare expert", 22918), \
+                        ("Can you deduct disability insurance", 25381)]
+>>>>>>> e8f0ca9fae9ae247a206dfcc79ad08ae5e8575d8
 
     run_comparison_testing(dict, wanted_questions)
 
