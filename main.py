@@ -142,13 +142,9 @@ def run_comparison_testing(dataset_dict, wanted_questions):
 
         ret_w2v_ids = [id for id, qa_pair in ret_w2v]
         ret_d2v_ids = [id for id, qa_pair in ret_d2v]
-        ret_ft_ids = [id for id, qa_pair in ret_ft]
-
-        results 
-
-        ret_w2v_ids = [id for id, qa_pair in ret_w2v]
-        ret_d2v_ids = [id for id, qa_pair in ret_d2v]
         # ret_ft_ids = [id for id, qa_pair in ret_ft]
+
+        results = []
 
         positions = []
         
