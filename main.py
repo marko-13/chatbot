@@ -27,6 +27,20 @@ def load_object(filename):
     with open(filename, 'rb') as input:
         return pickle.load(input)
 
+def get_bot(dataset_dict, algorithm='word2vec' ):
+    
+    # Load or create indexer
+    if os.path.exists(f'./objects/bot_{algorithm}.pickle'):
+        bot = load_object(f'./objects/bot_{algorithm}.pickle')
+    else:
+        bot = QnABot()
+
+        # use corpus to find typos in questions
+        dataset, corpus = preprocess_dataset(dataset_dict, lemmatize=False, remove_stopwords=False, measure_time=True)
+
+        bot.set_dataset(dataset_dict, dataset, corpus, algorithm=algorithm)
+        save_object(bot, f'./objects/bot_{algorithm}.pickle')
+
 
 def index_dataset():
     dict = {}
@@ -51,58 +65,89 @@ def index_dataset():
     
 
 
-def main():
+# def main():
 
-    # Read dataset
-    dict = index_dataset()
+#     # Read dataset
+#     dict = index_dataset()
 
-    # Preprocess dataset if needed
-    if not os.path.exists('./objects/indexer.pickle') or not os.path.exists('./objects/knn.pickle'):
-        dataset, corpus = preprocess_dataset(dict, lemmatize=True, remove_stopwords=True, measure_time=True)
+#     # Preprocess dataset if needed
+#     if not os.path.exists('./objects/indexer.pickle') or not os.path.exists('./objects/knn.pickle'):
+#         dataset, corpus = preprocess_dataset(dict, lemmatize=True, remove_stopwords=True, measure_time=True)
 
-    # Load or create indexer
-    if os.path.exists('./objects/indexer.pickle'):
-        indexer = load_object('./objects/indexer.pickle')
-    else:
-        indexer = Indexer(dataset, measure_time=True)
-        save_object(indexer, './objects/indexer.pickle')
+#     # Load or create indexer
+#     if os.path.exists('./objects/indexer.pickle'):
+#         indexer = load_object('./objects/indexer.pickle')
+#     else:
+#         indexer = Indexer(dataset, measure_time=True)
+#         save_object(indexer, './objects/indexer.pickle')
 
-    #Load or create KNN
-    if os.path.exists('./objects/knn.pickle'):
-        knn = load_object('./objects/knn.pickle')
-    else:
-        # Initialize KNN with given dataset
-        knn = KNN(dataset, corpus, measure_time=True)
-        save_object(knn, './objects/knn.pickle')
+#     #Load or create KNN
+#     if os.path.exists('./objects/knn.pickle'):
+#         knn = load_object('./objects/knn.pickle')
+#     else:
+#         # Initialize KNN with given dataset
+#         knn = KNN(dataset, corpus, measure_time=True)
+#         save_object(knn, './objects/knn.pickle')
 
-    # Main loop for user input
-    print("Type a question:")
-    q = input()
-    while q != 'quit':
+#     # Main loop for user input
+#     print("Type a question:")
+#     q = input()
+#     while q != 'quit':
 
 
-        processed_input = preprocess_input(q, lemmatize=True, remove_stopwords=True)
+#         processed_input = preprocess_input(q, lemmatize=True, remove_stopwords=True)
 
-        terms_to_search_for = list(processed_input.keys())
+#         terms_to_search_for = list(processed_input.keys())
 
-        print('Terms to search for:')
-        print(terms_to_search_for)
-        print()
+#         print('Terms to search for:')
+#         print(terms_to_search_for)
+#         print()
 
-        containing_docs = indexer.retrieve_documents(terms_to_search_for, measure_time=True)
+#         containing_docs = indexer.retrieve_documents(terms_to_search_for, measure_time=True)
 
-        res = knn.find_nearest_neigbours(processed_input, containing_docs , k=10, measure_time=True)
+#         res = knn.find_nearest_neigbours(processed_input, containing_docs , k=10, measure_time=True)
 
-        print("\nResults:\n")
-        i = 1
-        for r in res:
-            print(f'#{i}')
-            print(r)
-            print()
-            i += 1
+#         print("\nResults:\n")
+#         i = 1
+#         for r in res:
+#             print(f'#{i}')
+#             print(r)
+#             print()
+#             i += 1
 
-        print("Type a question:")
-        q = input()
+#         print("Type a question:")
+#         q = input()
+
+
+def run_comparison_testing(dataset_dict, wanted_questions):
+    '''
+    
+    :param dict dataset_dict: indexed dataset dictionary
+    :param list wanted_questions: list of tuples (question, id)
+        which represent our users input and the id of the 
+        desired question/answer pair we want our bot to return
+    '''
+    bot_w2v = get_bot(dataset_dict, 'word2vec')
+    bot_d2v = get_bot(dataset_dict, 'doc2vec')
+    bot_ft = get_bot(dataset_dict, 'fasttext')
+
+    # A list of pairs our desired output's ID and it's 
+    # location in the top 10 of our 3 algorithms
+    # [(id, [pos_w2v, pos_d2v, pos_ft])]
+    results = []
+    for question, id in wanted_questions:
+        # list of (id, [question, answer])
+        ret_w2v = bot_w2v.process_input(question)
+        ret_d2v = bot_d2v.process_input(question)
+        ret_ft = bot.process_input(question)
+
+        ret_w2v_ids = [id for id, qa_pair in ret_w2v]
+        ret_d2v_ids = [id for id, qa_pair in ret_d2v]
+        ret_d2v_ids = [id for id, qa_pair in ret_ft]
+
+        results 
+
+
 
 
 
@@ -128,6 +173,7 @@ if __name__ == "__main__":
 
         bot.set_dataset(dict, dataset, corpus, algorithm='word2vec')
         save_object(bot, './objects/bot_nn10.pickle')
+
 
     q = ""
     while q != 'q':
