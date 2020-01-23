@@ -94,7 +94,7 @@ class QnABot():
         elif algorithm == 'fasttext':
             # Word2Vec sa n-gramima
             q_tokens_list = list(token_dict.values())
-            self.model = FastText(size=100, window=3, min_count=0, sentences=q_tokens_list, iter=100)
+            self.model = FastText(size=100, window=3, min_count=0, sentences=q_tokens_list, iter=10)
         
         print(f"[Bot] Model training time: {time() - start}")
 

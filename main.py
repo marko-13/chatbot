@@ -72,8 +72,6 @@ def index_dataset():
 
 def main(dict):
 
-    print(datetime.datetime.now())
-
     # Load or create indexer
     if os.path.exists('./objects/bot_nn10.pickle'):
         bot = load_object('./objects/bot_nn10.pickle')
@@ -195,6 +193,8 @@ def run_comparison_testing(dataset_dict, wanted_questions):
 
 
 if __name__ == "__main__":
+    print(datetime.datetime.now())
+
 
     dict = index_dataset()
 
