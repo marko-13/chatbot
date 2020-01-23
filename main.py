@@ -2,6 +2,8 @@
 import csv
 import os
 import pickle
+import datetime
+from matplotlib import pyplot as plt
 
 # Local imports
 from preprocessing import preprocess_dataset, preprocess_input
@@ -41,6 +43,8 @@ def get_bot(dataset_dict, algorithm='word2vec' ):
         bot.set_dataset(dataset_dict, dataset, corpus, algorithm=algorithm)
         save_object(bot, f'./objects/bot_{algorithm}.pickle')
 
+    return bot
+
 
 def index_dataset():
     dict = {}
@@ -65,102 +69,9 @@ def index_dataset():
     
 
 
-# def main():
+def main(dict):
 
-#     # Read dataset
-#     dict = index_dataset()
-
-#     # Preprocess dataset if needed
-#     if not os.path.exists('./objects/indexer.pickle') or not os.path.exists('./objects/knn.pickle'):
-#         dataset, corpus = preprocess_dataset(dict, lemmatize=True, remove_stopwords=True, measure_time=True)
-
-#     # Load or create indexer
-#     if os.path.exists('./objects/indexer.pickle'):
-#         indexer = load_object('./objects/indexer.pickle')
-#     else:
-#         indexer = Indexer(dataset, measure_time=True)
-#         save_object(indexer, './objects/indexer.pickle')
-
-#     #Load or create KNN
-#     if os.path.exists('./objects/knn.pickle'):
-#         knn = load_object('./objects/knn.pickle')
-#     else:
-#         # Initialize KNN with given dataset
-#         knn = KNN(dataset, corpus, measure_time=True)
-#         save_object(knn, './objects/knn.pickle')
-
-#     # Main loop for user input
-#     print("Type a question:")
-#     q = input()
-#     while q != 'quit':
-
-
-#         processed_input = preprocess_input(q, lemmatize=True, remove_stopwords=True)
-
-#         terms_to_search_for = list(processed_input.keys())
-
-#         print('Terms to search for:')
-#         print(terms_to_search_for)
-#         print()
-
-#         containing_docs = indexer.retrieve_documents(terms_to_search_for, measure_time=True)
-
-#         res = knn.find_nearest_neigbours(processed_input, containing_docs , k=10, measure_time=True)
-
-#         print("\nResults:\n")
-#         i = 1
-#         for r in res:
-#             print(f'#{i}')
-#             print(r)
-#             print()
-#             i += 1
-
-#         print("Type a question:")
-#         q = input()
-
-
-def run_comparison_testing(dataset_dict, wanted_questions):
-    '''
-    
-    :param dict dataset_dict: indexed dataset dictionary
-    :param list wanted_questions: list of tuples (question, id)
-        which represent our users input and the id of the 
-        desired question/answer pair we want our bot to return
-    '''
-    bot_w2v = get_bot(dataset_dict, 'word2vec')
-    bot_d2v = get_bot(dataset_dict, 'doc2vec')
-    bot_ft = get_bot(dataset_dict, 'fasttext')
-
-    # A list of pairs our desired output's ID and it's 
-    # location in the top 10 of our 3 algorithms
-    # [(id, [pos_w2v, pos_d2v, pos_ft])]
-    results = []
-    for question, id in wanted_questions:
-        # list of (id, [question, answer])
-        ret_w2v = bot_w2v.process_input(question)
-        ret_d2v = bot_d2v.process_input(question)
-        ret_ft = bot.process_input(question)
-
-        ret_w2v_ids = [id for id, qa_pair in ret_w2v]
-        ret_d2v_ids = [id for id, qa_pair in ret_d2v]
-        ret_d2v_ids = [id for id, qa_pair in ret_ft]
-
-        results 
-
-
-
-
-
-
-if __name__ == "__main__":
-    # main()
-
-    dict = index_dataset()
-    # print((corpus))
-    # print(dict)
-    # testing(dict)
-
-
+    print(datetime.datetime.now())
 
     # Load or create indexer
     if os.path.exists('./objects/bot_nn10.pickle'):
@@ -205,3 +116,87 @@ if __name__ == "__main__":
             print(ret[1])
             print()
             print()
+
+
+
+def run_comparison_testing(dataset_dict, wanted_questions):
+    '''
+    
+    :param dict dataset_dict: indexed dataset dictionary
+    :param list wanted_questions: list of tuples (question, id)
+        which represent our users input and the id of the 
+        desired question/answer pair we want our bot to return
+    '''
+    bot_w2v = get_bot(dataset_dict, 'word2vec')
+    bot_d2v = get_bot(dataset_dict, 'doc2vec')
+    bot_ft = get_bot(dataset_dict, 'fasttext')
+
+    # A list of pairs our desired output's ID and it's 
+    # location in the top 10 of our 3 algorithms
+    # [(id, [pos_w2v, pos_d2v, pos_ft])]
+    results = []
+    for question, id in wanted_questions:
+        # list of (id, [question, answer])
+        ret_w2v = bot_w2v.process_input(question)
+        ret_d2v = bot_d2v.process_input(question)
+        # ret_ft = bot.process_input(question)
+
+        ret_w2v_ids = [id for id, qa_pair in ret_w2v]
+        ret_d2v_ids = [id for id, qa_pair in ret_d2v]
+        # ret_ft_ids = [id for id, qa_pair in ret_ft]
+
+        positions = []
+        
+        for alg in [ret_w2v_ids, ret_d2v_ids]:
+            try:
+                pos = alg.index(id)
+                positions.append(pos)
+            except ValueError:
+                positions.append(-1)
+
+        print(question)
+        print(positions)
+        print("\n")
+
+        print("Word2Vec output:")
+        for id in ret_w2v_ids:
+            print(dataset_dict[id][1])
+            print('\n')
+        print('==============\n')
+
+        print("Doc2Vec output:")
+        for id in ret_d2v_ids:
+            print(dataset_dict[id][1])
+            print('\n')
+        print('==============\n')
+        
+        results.append((id, positions))
+
+    print(results)
+
+    x_ax = []
+    y_ax = []
+    for id, pos in results:
+        x_ax.append(pos)
+    
+    plt.plot(list(range(len(results))), x_ax, marker="o")
+    plt.show()
+
+
+
+
+
+
+if __name__ == "__main__":
+
+    dict = index_dataset()
+
+    # main()
+
+    wanted_questions = [("Is fixed annuity safe?", 15453), \
+                        ("Can I opt out of health insurance",17884), \
+                        ("How to become a medicare expert", 22918), \
+                        ("Can you deduct disability insurance", 25381)]
+
+    run_comparison_testing(dict, wanted_questions)
+
