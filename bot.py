@@ -22,7 +22,7 @@ class QnABot():
     #   2. stopword removal
     #   3. conversion to lowercase
     # 
-    def set_dataset(self, dataset, processed_dataset, corpus, algorithm='word2vec'):
+    def set_dataset(self, dataset, processed_dataset, corpus, algorithm='word2vec', lemmatize=True):
         '''
         Extracts the questions from the dataset. Runs preprocessing on them
         (which includes tokenization and convesion to lowercase).
@@ -38,6 +38,8 @@ class QnABot():
         '''
 
         self.algorithm = algorithm
+
+        self.lemmatize = lemmatize
 
         self.dataset = dataset
 
@@ -77,7 +79,7 @@ class QnABot():
         for key in list_of_q:
             # token_list.append(preprocess_input(question))
             question = list_of_q[key]
-            tokens = preprocess_input(question)
+            tokens = preprocess_input(question, lemmatize=self.lemmatize)
             token_dict[key] = tokens
 
 
@@ -157,13 +159,14 @@ class QnABot():
         '''
         # Rate questions by their similarity scores using w2v
         q_similarity_scores = {}
-        input_tokens = preprocess_input(raw_input)
+        input_tokens = preprocess_input(raw_input, lemmatize=self.lemmatize)
+        # print("\n\nAm here\n\n")
         if self.algorithm == 'word2vec':
             for id in ids:
                 question = self.dataset[id][0]
                 sum_similarities = 0
                 
-                question = preprocess_input(question)
+                question = preprocess_input(question, lemmatize=self.lemmatize)
 
                 
                 for word in input_tokens:
@@ -226,6 +229,42 @@ class QnABot():
             i = 0
             for id, cos_sim in sims:
                 retval.append((id, self.dataset[id]))
+                i += 1
+                if i == 5:
+                    break
+
+            for id in ids:
+                question = self.dataset[id][0]
+                sum_similarities = 0
+
+                question = preprocess_input(question, lemmatize=self.lemmatize)
+
+                for word in input_tokens:
+
+                    for q_word in retval:
+                        try:
+                            # Find the maximum similarity of each input word
+                            # to each word in the question
+                            sims = [self.model.wv.similarity(word, q_word)]
+                            sum_similarities += max(sims)
+                        except KeyError:
+                            print(f"Word {q_word} not in dataset")
+
+                # Associate every question with it's similarity
+                # to the input
+                q_similarity_scores[id] = sum_similarities
+
+            # Sort question IDs by their similarity to the input
+            sorted_by_sim = {id: sim for id, sim in
+                             sorted(q_similarity_scores.items(), key=lambda x: x[1], reverse=True)}
+
+            print(sorted_by_sim)
+
+            # Return the top 10 results
+            retval = []
+            i = 0
+            for res in sorted_by_sim:
+                retval.append((res, self.dataset[res]))
                 i += 1
                 if i == 10:
                     break
