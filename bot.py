@@ -94,7 +94,7 @@ class QnABot():
         elif algorithm == 'fasttext':
             # Word2Vec sa n-gramima
             q_tokens_list = list(token_dict.values())
-            self.model = FastText(size=100, window=3, min_count=0, sentences=q_tokens_list, iter=10)
+            self.model = FastText(size=100, window=3, min_count=0, sentences=q_tokens_list, iter=100)
         
         print(f"[Bot] Model training time: {time() - start}")
 
@@ -158,7 +158,7 @@ class QnABot():
         # Rate questions by their similarity scores using w2v
         q_similarity_scores = {}
         input_tokens = preprocess_input(raw_input)
-        print("\n\nAm here\n\n")
+        # print("\n\nAm here\n\n")
         if self.algorithm == 'word2vec':
             for id in ids:
                 question = self.dataset[id][0]
@@ -227,6 +227,40 @@ class QnABot():
             i = 0
             for id, cos_sim in sims:
                 retval.append((id, self.dataset[id]))
+                i += 1
+                if i == 5:
+                    break
+
+            for id in ids:
+                question = self.dataset[id][0]
+                sum_similarities = 0
+
+                question = preprocess_input(question)
+
+                for word in input_tokens:
+
+                    for q_word in retval:
+                        try:
+                            # Find the maximum similarity of each input word
+                            # to each word in the question
+                            sims = [self.model.wv.similarity(word, q_word)]
+                            sum_similarities += max(sims)
+                        except KeyError:
+                            print(f"Word {q_word} not in dataset")
+
+                # Associate every question with it's similarity
+                # to the input
+                q_similarity_scores[id] = sum_similarities
+
+            # Sort question IDs by their similarity to the input
+            sorted_by_sim = {id: sim for id, sim in
+                             sorted(q_similarity_scores.items(), key=lambda x: x[1], reverse=True)}
+
+            # Return the top 10 results
+            retval = []
+            i = 0
+            for res in sorted_by_sim:
+                retval.append((res, self.dataset[res]))
                 i += 1
                 if i == 10:
                     break
