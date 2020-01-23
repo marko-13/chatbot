@@ -140,11 +140,11 @@ def run_comparison_testing(dataset_dict, wanted_questions):
         # list of (id, [question, answer])
         ret_w2v = bot_w2v.process_input(question)
         ret_d2v = bot_d2v.process_input(question)
-        ret_ft = bot.process_input(question)
+        ret_ft = bot_ft.process_input(question)
 
         ret_w2v_ids = [id for id, qa_pair in ret_w2v]
         ret_d2v_ids = [id for id, qa_pair in ret_d2v]
-        ret_d2v_ids = [id for id, qa_pair in ret_ft]
+        ret_ft_ids = [id for id, qa_pair in ret_ft]
 
         results 
 
@@ -172,7 +172,7 @@ if __name__ == "__main__":
         # use corpus to find typos in questions
         dataset, corpus = preprocess_dataset(dict, lemmatize=False, remove_stopwords=False, measure_time=True)
 
-        bot.set_dataset(dict, dataset, corpus, algorithm='word2vec')
+        bot.set_dataset(dict, dataset, corpus, algorithm='fasttext')
         save_object(bot, './objects/bot_nn10.pickle')
 
 
