@@ -5,7 +5,7 @@ from sklearn.neighbors import NearestNeighbors
 
 from time import time
 
-from gensim.models import Word2Vec
+from gensim.models import Word2Vec, FastText
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 
 # Local imports
@@ -44,15 +44,27 @@ class QnABot():
         start = time()
 
         list_of_q = self._extract_questions(dataset)
+        list_of_a = self._extract_answers(dataset)
 
+        
         self.vectorizer = CountVectorizer(lowercase=True, analyzer='word')
+        # KNN ON QUESTIONS
         X = self.vectorizer.fit_transform(list_of_q.values())
 
+        # KNN ON ANSWERS
+        # NOTE: When training doc2vec on anwsers, it works well only
+        # if all of the search terms of the users question are located
+        # in the answer. If the answer doesn't include the searched terms,
+        # it won't be returned. 
+        # X = self.vectorizer.fit_transform(list_of_a.values())
+        
         self.tf_idf_transformer = TfidfTransformer(use_idf=True).fit(X)
 
         x_tf_idf = self.tf_idf_transformer.transform(X)
 
         self.nbrs = NearestNeighbors(n_neighbors=10, algorithm='ball_tree', metric='manhattan').fit(x_tf_idf)
+        
+
 
         print(f"[Bot] Initialiation of tf-idf and KNN: {time() - start}")
 
@@ -61,6 +73,7 @@ class QnABot():
         # Extract token list per question
         # for the w2v model
         token_dict = {}
+        # TODO: change back to 'list_of_q'
         for key in list_of_q:
             # token_list.append(preprocess_input(question))
             question = list_of_q[key]
@@ -71,12 +84,19 @@ class QnABot():
         # === Initialize the model ===
 
         # Train w2v model
+        start = time()
         if algorithm == 'word2vec':
             q_tokens_list = list(token_dict.values())
             self.model = Word2Vec(q_tokens_list, size=100, window=3, min_count=0, workers=4, iter=10)
-        else:
+        elif algorithm == 'doc2vec':
             documents = [TaggedDocument(doc, [key]) for key, doc in token_dict.items()]
-            self.model = Doc2Vec(documents,  vector_size=150, window=1, min_count=0, workers=4, epochs=10)
+            self.model = Doc2Vec(documents,  vector_size=150, window=3, min_count=0, workers=4, epochs=10)
+        elif algorithm == 'fasttext':
+            # Word2Vec sa n-gramima
+            q_tokens_list = list(token_dict.values())
+            self.model = FastText(size=100, window=3, min_count=0, sentences=q_tokens_list, iter=10)
+        
+        print(f"[Bot] Model training time: {time() - start}")
 
     
     def process_input(self, Y):
@@ -138,6 +158,7 @@ class QnABot():
         # Rate questions by their similarity scores using w2v
         q_similarity_scores = {}
         input_tokens = preprocess_input(raw_input)
+        print("\n\nAm here\n\n")
         if self.algorithm == 'word2vec':
             for id in ids:
                 question = self.dataset[id][0]
@@ -174,12 +195,30 @@ class QnABot():
                     break
 
             return retval
-        else:
-            print(list(input_tokens.keys()))
-            doc_vec = self.model.infer_vector(list(input_tokens.keys()), alpha=0.01, epochs=10)
+        elif self.algorithm == 'doc2vec':
+            input_tokens = list(input_tokens.keys())
+            print(input_tokens)
+            doc_vec = self.model.infer_vector(input_tokens, alpha=0.01, epochs=100)
             # print(self.model.docvecs[13])
 
             sims = self.model.docvecs.most_similar([doc_vec])
+
+            print(sims)
+
+            # Return the top 10 results
+            retval = []
+            i = 0
+            for id, cos_sim in sims:
+                retval.append((id, self.dataset[id]))
+                i += 1
+                if i == 10:
+                    break
+
+            return retval
+        elif self.algorithm == 'fasttext':
+            input_tokens = list(input_tokens.keys())
+
+            sims = self.model.most_similar(positive=input_tokens, topn=10)
 
             print(sims)
 
@@ -209,3 +248,17 @@ class QnABot():
 
         return ret
 
+
+    def _extract_answers(self, dataset):
+        '''
+        Extracts only the questions from the dataset
+
+        :return dict: {q_id, question}
+        '''
+        ret = {}
+        for key in dataset:
+            val = dataset[key]
+            # ret.append(str(val[0]))
+            ret[key] = str(val[1])
+
+        return ret
