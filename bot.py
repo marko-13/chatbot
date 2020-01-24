@@ -5,11 +5,20 @@ from time import time
 from gensim.models import Word2Vec, FastText
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 
+from nltk import word_tokenize          
+from nltk.stem import WordNetLemmatizer 
+
+
 # Local imports
 from preprocessing import preprocess_input, preprocess_dataset
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+class LemmaTokenizer(object):
+    def __init__(self):
+        self.wnl = WordNetLemmatizer()
+    def __call__(self, articles):
+        return [self.wnl.lemmatize(t) for t in word_tokenize(articles)]
 
 class QnABot():
     def set_dataset(self, dataset, processed_dataset, corpus, algorithm='word2vec', lemmatize=True):
@@ -36,7 +45,11 @@ class QnABot():
         list_of_q = self._extract_questions(dataset)
         list_of_a = self._extract_answers(dataset)
 
-        self.vectorizer = CountVectorizer(lowercase=True, analyzer='word')
+        if self.lemmatize:
+            self.vectorizer = CountVectorizer(lowercase=True, analyzer='word', tokenizer=LemmaTokenizer())
+        else:
+            self.vectorizer = CountVectorizer(lowercase=True, analyzer='word')
+
         # KNN ON QUESTIONS
         X = self.vectorizer.fit_transform(list_of_q.values())
 
@@ -137,8 +150,13 @@ class QnABot():
             # TODO: check if this realy is the TF_IDF and not just IDF
             word2tfidf = dict(zip(self.vectorizer.get_feature_names(), self.tf_idf_transformer.idf_))
 
-            for w, s in word2tfidf.items():
-                print(w, s)
+            # print(word2tfidf['your'])
+            # print(self.model.wv.similarity('ducks', 'your'))
+            # print(word2tfidf['a'])
+
+
+            # for w, s in word2tfidf.items():
+            #     print(w, s)
 
             # print(self.vectorizer.get_feature_names())
 

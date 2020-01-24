@@ -143,6 +143,13 @@ def run_comparison_testing(dataset_dict, wanted_questions):
             print(dataset_dict[id][0])
             print('\n')
         print('==============\n')
+
+        print("FastText output:")
+        for id in ret_ft_ids:
+            print(id)
+            print(dataset_dict[id][0])
+            print('\n')
+        print('==============\n')
         
         results.append((id_list[0], positions))
 
@@ -201,7 +208,12 @@ if __name__ == "__main__":
                         ("blanket life insurance", [9783]),
                         ("What is jumbo life insurance", [num for num in range(25650, 25654)]),
                         ("can i get a life insurance policy from my parents", [num for num in range(11963, 11967)]),
-                        ("cashing out a 401k", [49, 50])]
+                        ("cashing out a 401k", [49, 50, 1708, 5147, 5428, 7788, 7789, 12410]),
+                        ("disability insurance and pregnancy", [746, 2516, 2517, 27196, 27197, 26405, 26314, 26315, 26069, 25980, 25981, 20765, 20435, 19122, 19123, 19124, 19125, 18062, 18063, 17447, 17448, 17004, 17005, 17006, 10633, 10634, 1253]),
+                        ]# ("", []),
+                        # ("", []),
+                        # ("", []),
+                        # ("", [])]
 
     run_comparison_testing(dict, wanted_questions)
 
