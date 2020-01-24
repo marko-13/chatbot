@@ -1,51 +1,32 @@
-#from ime_filea import ime_funkcije
 import csv
 import os
 import sys
 import pickle
 import datetime
-from matplotlib import pyplot as plt
 
+from matplotlib import pyplot as plt
+from nearest_neighbours import KNN
 
 # Local imports
 from preprocessing import preprocess_dataset, preprocess_input
-
-from nearest_neighbours import KNN
-
+from bot import QnABot
 from indexing import Indexer
-
 from test import testing
 
-from bot import QnABot
+# ----------------------------------------------------------------------------------------------------------------------
+# TODO
+# Add weights to check similarity in word2vec similarity in typed question and list of questions
+# Note: will be using pretrained GloVe model, trained on wikipedia 800mb in size
 
-# TODO:
-# FAST TEXT i DOC2VEC
 
-
-def save_object(object, filename):
+def save_object(object_to_save, filename):
     with open(filename, 'wb') as output:
-        pickle.dump(object, output, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(object_to_save, output, pickle.HIGHEST_PROTOCOL)
 
 
 def load_object(filename):
-    with open(filename, 'rb') as input:
-        return pickle.load(input)
-
-def get_bot(dataset_dict, algorithm='word2vec', lemmatize=True ):
-    
-    # Load or create indexer
-    if os.path.exists(f'./objects/bot_{algorithm}.pickle'):
-        bot = load_object(f'./objects/bot_{algorithm}.pickle')
-    else:
-        bot = QnABot()
-
-        # use corpus to find typos in questions
-        dataset, corpus = preprocess_dataset(dataset_dict, lemmatize=lemmatize, remove_stopwords=False, measure_time=True)
-
-        bot.set_dataset(dataset_dict, dataset, corpus, algorithm=algorithm, lemmatize=lemmatize)
-        save_object(bot, f'./objects/bot_{algorithm}.pickle')
-
-    return bot
+    with open(filename, 'rb') as input_file:
+        return pickle.load(input_file)
 
 
 def index_dataset():
@@ -55,48 +36,27 @@ def index_dataset():
         csv_reader = csv.reader(csv_file, delimiter='\t')
         line_count = 0
         for row in csv_reader:
+            # Skip first line
             if line_count == 0:
                 line_count = line_count + 1
             else:
-                # print(f'{row[0]}  {row[1]}  {row[2]}')
-                # ako nema odgovor prskoci
+                # If answer(row[2]) does not exist, skip
                 if row[2] == '':
                     continue
                 pom = []
                 pom.append(row[1])
                 pom.append(row[2].rstrip())
-                dict.update({int(row[0]) : pom})
-        # print(dict)
+                dict.update({int(row[0]): pom})
     return dict
-    
 
 
-def main(dict, algorithm='word2vec'):
-
-    bot = get_bot(dict, algorithm=algorithm)
+def main(dict, algorithm_v1):
+    # Get desired algorithm bot
+    bot = get_bot(dict, algorithm=algorithm_v1)
 
     q = ""
     while q != 'q':
         q = input("Your question (to quit enter q): ")
-
-
-        # TODO
-        # tokemnizuj input q i za svaku rec nadji najblizu
-
-        # check for typos
-        flag_typos = True
-        all_incorrect = True
-        # TODO
-        # proveri da li je samo typo ili je cela recenica neka brljotina, ako je samo typo uradi levenshteina
-        split_str = q.split(" ")
-        for word in split_str:
-            if word.lower() in bot.corpus:
-                flag_typos = False
-
-        if flag_typos:
-            print("No suitable answers found.\n")
-            continue
-
 
         for ret in bot.process_input(q):
             print(f"{ret[0]})")
@@ -105,14 +65,29 @@ def main(dict, algorithm='word2vec'):
             print()
 
 
+def get_bot(dataset_dict, algorithm='word2vec', do_lemmatization=True):
+    # Load bot model if possible, create new otherwise
+    if os.path.exists(f'./objects/bot_{algorithm}.pickle'):
+        bot = load_object(f'./objects/bot_{algorithm}.pickle')
+    else:
+        bot = QnABot()
+        dataset, corpus = preprocess_dataset(dataset_dict, lemmatize=do_lemmatization, remove_stopwords=False,
+                                             measure_time=True)
+
+        bot.set_dataset(dataset_dict, dataset, corpus, algorithm=algorithm, lemmatize=do_lemmatization)
+        save_object(bot, f'./objects/bot_{algorithm}.pickle')
+
+    return bot
+
+
 def run_comparison_testing(dataset_dict, wanted_questions):
     '''
-    
     :param dict dataset_dict: indexed dataset dictionary
     :param list wanted_questions: list of tuples (question, [ids])
         which represent our users input and the id of the 
         desired question/answer pair we want our bot to return
     '''
+    # dataset_dict = {id, [question, answer]}
 
     lemmatize = True
 
@@ -130,10 +105,11 @@ def run_comparison_testing(dataset_dict, wanted_questions):
         ret_d2v = bot_d2v.process_input(question)
         # ret_ft = bot_ft.process_input(question)
 
-
         ret_w2v_ids = [id for id, qa_pair in ret_w2v]
         ret_d2v_ids = [id for id, qa_pair in ret_d2v]
         # ret_ft_ids = [id for id, qa_pair in ret_ft]
+
+        results = []
 
         positions = []
         
@@ -198,26 +174,23 @@ def run_comparison_testing(dataset_dict, wanted_questions):
     plt.savefig('log/with_lemm.png')
     plt.show()
 
-
-
-
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
-    # print(datetime.datetime.now())
+    print("Poceo u: " + str(datetime.datetime.now()))
 
-
+    # read csv file and return {id, [question, answer]}
     dict = index_dataset()
 
+    # dict = {id, [question, amnswer]}, desired algorithm name("fasttext", "doc2vec", "word2vec")
+    main(dict, "word2vec")
+
+    # Set algorithm from command line argument
     algorithm = 'word2vec' if len(sys.argv) < 2 else sys.argv[1]
+    print("Used algorithm: " + str(algorithm))
 
-    print(algorithm)
-
-    # main(dict, algorithm=algorithm)
-
-    
-
-
+    # Questions for testing accuracy
     wanted_questions = [("Is fixed annuity safe?", [15453]), 
                         ("Can I opt out of health insurance", [17884]), 
                         ("How to become a medicare expert", [22917, 22918]), 
@@ -229,5 +202,5 @@ if __name__ == "__main__":
                         ("can i get a life insurance policy from my parents", [num for num in range(11963, 11967)]),
                         ("cashing out a 401k", [49, 50])]
 
-    run_comparison_testing(dict, wanted_questions)
+    # run_comparison_testing(dict, wanted_questions)
 
