@@ -132,32 +132,43 @@ class QnABot():
 
         # WORD2VEC -----------------------------------------------------------------------------------------------------
         if self.algorithm == 'word2vec':
+
+            # Each corpus word's tf_idf score
+            # TODO: check if this realy is the TF_IDF and not just IDF
+            word2tfidf = dict(zip(self.vectorizer.get_feature_names(), self.tf_idf_transformer.idf_))
+
+            for w, s in word2tfidf.items():
+                print(w, s)
+
+            # print(self.vectorizer.get_feature_names())
+
+
             # ids = ids of 100 documents from high recall model
             for id in ids:
                 question = self.dataset[id][0]
                 sum_similarities = 0
                 
                 question = preprocess_input(question, lemmatize=self.lemmatize)
-                
+
+
                 for word in input_tokens:
+                    
+                    sims = []
 
                     for q_word in question:
                         try:
                             # NOTE: mislim da je bila greska ovde, sum se sabirao u try blocku, znaci svaki put doda
                             # najveci sum sto nije dobro, treba samo jednom na kraju
-                            # TODO
-                            # Multiply each q_word by its tf-idf score, also check if tf-idf score is 0
-                            word2tfidf = dict(zip(self.vectorizer.get_feature_names(), self.tf_idf_transformer.idf_))
 
                             # Find the maximum similarity of each input word to each word in the question
-                            sims = [self.model.wv.similarity(word, q_word)]
+                            sims.append(self.model.wv.similarity(word, q_word))
 
                         except KeyError:
-                            print(f"Word {q_word} not in dataset")
+                            print(f"[Inner Block] Word {q_word} not in dataset")
                     try:
-                        sum_similarities += max(sims) * word2tfidf[word]
+                        sum_similarities += (max(sims) * word2tfidf[word])
                     except KeyError:
-                        print(f"Word {word} not in dataset")
+                        print(f"[Outer Block] Word {word} not in dataset")
 
                 # Associate every question with it's similarity to the input
                 q_similarity_scores[id] = sum_similarities
@@ -200,47 +211,46 @@ class QnABot():
 
         # FASTTEXT -----------------------------------------------------------------------------------------------------
         elif self.algorithm == 'fasttext':
-            input_tokens = list(input_tokens.keys())
 
-            sims = self.model.most_similar(positive=input_tokens, topn=10)
+            # Each corpus word's tf_idf score
+            # TODO: check if this realy is the TF_IDF and not just IDF
+            word2tfidf = dict(zip(self.vectorizer.get_feature_names(), self.tf_idf_transformer.idf_))
 
-            print(sims)
+            # print(self.vectorizer.get_feature_names())
 
-            # Return the top 10 results
-            retval = []
-            i = 0
-            for id, cos_sim in sims:
-                retval.append((id, self.dataset[id]))
-                i += 1
-                if i == 5:
-                    break
 
+            # ids = ids of 100 documents from high recall model
             for id in ids:
                 question = self.dataset[id][0]
                 sum_similarities = 0
-
+                
                 question = preprocess_input(question, lemmatize=self.lemmatize)
 
+
                 for word in input_tokens:
+                    
+                    sims = []
 
-                    for q_word in retval:
+                    for q_word in question:
                         try:
-                            # Find the maximum similarity of each input word
-                            # to each word in the question
-                            sims = [self.model.wv.similarity(word, q_word)]
-                            sum_similarities += max(sims)
-                        except KeyError:
-                            print(f"Word {q_word} not in dataset")
+                            # NOTE: mislim da je bila greska ovde, sum se sabirao u try blocku, znaci svaki put doda
+                            # najveci sum sto nije dobro, treba samo jednom na kraju
 
-                # Associate every question with it's similarity
-                # to the input
+                            # Find the maximum similarity of each input word to each word in the question
+                            sims.append(self.model.wv.similarity(word, q_word))
+
+                        except KeyError:
+                            print(f"[Inner Block] Word {q_word} not in dataset")
+                    try:
+                        sum_similarities += (max(sims) * word2tfidf[word])
+                    except KeyError:
+                        print(f"[Outer Block] Word {word} not in dataset")
+
+                # Associate every question with it's similarity to the input
                 q_similarity_scores[id] = sum_similarities
 
             # Sort question IDs by their similarity to the input
-            sorted_by_sim = {id: sim for id, sim in
-                             sorted(q_similarity_scores.items(), key=lambda x: x[1], reverse=True)}
-
-            print(sorted_by_sim)
+            sorted_by_sim = {id: sim for id, sim in sorted(q_similarity_scores.items(), key = lambda x: x[1], reverse=True) }
 
             # Return the top 10 results
             retval = []
