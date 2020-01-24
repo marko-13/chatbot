@@ -54,15 +54,16 @@ def main(dict, algorithm_v1):
     # Get desired algorithm bot
     bot = get_bot(dict, algorithm=algorithm_v1)
 
-    q = ""
+    q = input("Your question (to quit enter q): ")
     while q != 'q':
-        q = input("Your question (to quit enter q): ")
 
         for ret in bot.process_input(q):
             print(f"{ret[0]})")
             print(ret[1])
             print()
             print()
+
+        q = input("Your question (to quit enter q): ")
 
 
 def get_bot(dataset_dict, algorithm='word2vec', do_lemmatization=True):
@@ -103,17 +104,16 @@ def run_comparison_testing(dataset_dict, wanted_questions):
         # list of (id, [question, answer])
         ret_w2v = bot_w2v.process_input(question)
         ret_d2v = bot_d2v.process_input(question)
-        # ret_ft = bot_ft.process_input(question)
+        ret_ft = bot_ft.process_input(question)
 
         ret_w2v_ids = [id for id, qa_pair in ret_w2v]
         ret_d2v_ids = [id for id, qa_pair in ret_d2v]
-        # ret_ft_ids = [id for id, qa_pair in ret_ft]
+        ret_ft_ids = [id for id, qa_pair in ret_ft]
 
-        results = []
 
         positions = []
         
-        for alg in [ret_w2v_ids, ret_d2v_ids]:
+        for alg in [ret_w2v_ids, ret_d2v_ids, ret_ft_ids]:
             indices = []
             found = False
             for alg_retval in alg:
@@ -159,15 +159,16 @@ def run_comparison_testing(dataset_dict, wanted_questions):
     
     x_range = list(range(len(results)))
 
-    horizontal_line = [0 for i in range(10)]
+    horizontal_line = [0 for i in x_range]
 
     plt.yticks(list(range(-1, 10)))
     plt.xticks(x_range, labels)
 
 
     plt.plot(x_range, horizontal_line)
-    plt.plot(x_range, [val[0] for val in y_ax], 'o', label="Word2Vec", markersize=10)
+    plt.plot(x_range, [val[0] for val in y_ax], 'o', label="Word2Vec", markersize=11)
     plt.plot(x_range, [val[1] for val in y_ax], 'o', label="Doc2Vec", markersize=8)
+    plt.plot(x_range, [val[2] for val in y_ax], 'o', label="FastText", markersize=5)
 
     plt.legend(loc="upper left")
 
@@ -184,7 +185,7 @@ if __name__ == "__main__":
     dict = index_dataset()
 
     # dict = {id, [question, amnswer]}, desired algorithm name("fasttext", "doc2vec", "word2vec")
-    main(dict, "word2vec")
+    # main(dict, "word2vec")
 
     # Set algorithm from command line argument
     algorithm = 'word2vec' if len(sys.argv) < 2 else sys.argv[1]
@@ -202,5 +203,5 @@ if __name__ == "__main__":
                         ("can i get a life insurance policy from my parents", [num for num in range(11963, 11967)]),
                         ("cashing out a 401k", [49, 50])]
 
-    # run_comparison_testing(dict, wanted_questions)
+    run_comparison_testing(dict, wanted_questions)
 
