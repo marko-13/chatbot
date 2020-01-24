@@ -133,6 +133,12 @@ class QnABot():
         # WORD2VEC -----------------------------------------------------------------------------------------------------
         if self.algorithm == 'word2vec':
             # ids = ids of 100 documents from high recall model
+
+            word2tfidf = dict(zip(self.vectorizer.get_feature_names(), self.tf_idf_transformer.))
+
+            for word1, score in word2tfidf.items():
+                print(word1, score)
+
             for id in ids:
                 question = self.dataset[id][0]
                 sum_similarities = 0
@@ -147,7 +153,6 @@ class QnABot():
                             # najveci sum sto nije dobro, treba samo jednom na kraju
                             # TODO
                             # Multiply each q_word by its tf-idf score, also check if tf-idf score is 0
-                            word2tfidf = dict(zip(self.vectorizer.get_feature_names(), self.tf_idf_transformer.idf_))
 
                             # Find the maximum similarity of each input word to each word in the question
                             sims = [self.model.wv.similarity(word, q_word)]
