@@ -223,7 +223,7 @@ if __name__ == "__main__":
                         ("is there life insurance for elderly", [25379, 25380]),
                         ("blanket life insurance", [9783]),
                         ("What is jumbo life insurance", [num for num in range(25650, 25654)]),
-                        ("can i get a life insurance policy from my parents", [num for num in range(11963, 11967)]),
+                        ("can i get a life insurance policy from my parent", [11963, 11964, 11965, 11966, 15786, 17280, 17281, 27635, 27636, 27637, 2465, 2466, 2467, 7215, 7216, 7399, 7400]),
                         ("cashing out a 401k", [49, 50, 1708, 5147, 5428, 7788, 7789, 12410]),
                         ("disability insurance and pregnancy", [746, 2516, 2517, 27196, 27197, 26405, 26314, 26315, 26069, 25980, 25981, 20765, 20435, 19122, 19123, 19124, 19125, 18062, 18063, 17447, 17448, 17004, 17005, 17006, 10633, 10634, 1253]),
                         ]# ("", []),

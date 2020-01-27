@@ -220,8 +220,14 @@ class QnABot():
             # Sum up all the input tokens word vectors
             summed_input_vector = None
             for input_token in input_tokens:
-                if word2tfidf[input_token] < 5:
+                # Only accept word that have an idf score
+                # >= 5
+                try:
+                    if word2tfidf[input_token] < 4:
+                        continue
+                except KeyError:
                     continue
+
                 word_vector = self.model.wv[input_token]
 
                 if word_vector is None:
