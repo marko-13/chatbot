@@ -215,11 +215,15 @@ class QnABot():
 
         # Word2Vec - stragety: sum all of the word vectors and compare ----------------------------------------------------------------
         elif self.algorithm == 'word2vecSum' or self.algorithm == 'fasttextSum':
+            word2tfidf = dict(zip(self.vectorizer.get_feature_names(), self.tf_idf_transformer.idf_))
 
             # Sum up all the input tokens word vectors
             summed_input_vector = None
             for input_token in input_tokens:
+                if word2tfidf[input_token] < 5:
+                    continue
                 word_vector = self.model.wv[input_token]
+
                 if word_vector is None:
                     continue
                 if summed_input_vector is None:
