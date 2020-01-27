@@ -95,6 +95,8 @@ def run_comparison_testing(dataset_dict, wanted_questions):
     bot_w2v = get_bot(dataset_dict, 'word2vec', lemmatize)
     bot_d2v = get_bot(dataset_dict, 'doc2vec', lemmatize)
     bot_ft = get_bot(dataset_dict, 'fasttext', lemmatize)
+    bot_w2v_sum = get_bot(dataset_dict, 'word2vecSum', lemmatize)
+    bot_ft_sum = get_bot(dataset_dict, 'fasttextSum', lemmatize)
 
     # A list of pairs our desired output's ID and it's 
     # location in the top 10 of our 3 algorithms
@@ -105,15 +107,27 @@ def run_comparison_testing(dataset_dict, wanted_questions):
         ret_w2v = bot_w2v.process_input(question)
         ret_d2v = bot_d2v.process_input(question)
         ret_ft = bot_ft.process_input(question)
+        ret_w2v_sum = bot_w2v_sum.process_input(question)
+        ret_ft_sum = bot_ft_sum.process_input(question)
 
         ret_w2v_ids = [id for id, qa_pair in ret_w2v]
         ret_d2v_ids = [id for id, qa_pair in ret_d2v]
         ret_ft_ids = [id for id, qa_pair in ret_ft]
+        ret_w2v_sum_ids = [id for id, qa_pair in ret_w2v_sum]
+        ret_ft_sum_ids = [id for id, qa_pair in ret_ft_sum]
 
+
+        all_ret = [
+            ret_w2v_ids,
+            ret_d2v_ids,
+            ret_ft_ids,
+            ret_w2v_sum_ids,
+            ret_ft_sum_ids
+        ]
 
         positions = []
         
-        for alg in [ret_w2v_ids, ret_d2v_ids, ret_ft_ids]:
+        for alg in all_ret:
             indices = []
             found = False
             for alg_retval in alg:
@@ -173,9 +187,11 @@ def run_comparison_testing(dataset_dict, wanted_questions):
 
 
     plt.plot(x_range, horizontal_line)
-    plt.plot(x_range, [val[0] for val in y_ax], 'o', label="Word2Vec", markersize=11)
-    plt.plot(x_range, [val[1] for val in y_ax], 'o', label="Doc2Vec", markersize=8)
-    plt.plot(x_range, [val[2] for val in y_ax], 'o', label="FastText", markersize=5)
+    plt.plot(x_range, [val[0] for val in y_ax], "s", color='b', label="Word2Vec", markersize=12)
+    plt.plot(x_range, [val[1] for val in y_ax], 'o', label="Doc2Vec", markersize=10)
+    plt.plot(x_range, [val[2] for val in y_ax], 'v', label="FastText", markersize=12)
+    plt.plot(x_range, [val[3] for val in y_ax], "s", label="Word2VecSum", markersize=6)
+    plt.plot(x_range, [val[4] for val in y_ax], 'v', label="FastTextSum", markersize=6)
 
     plt.legend(loc="upper left")
 

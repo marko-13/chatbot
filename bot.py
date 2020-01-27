@@ -8,6 +8,8 @@ from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from nltk import word_tokenize          
 from nltk.stem import WordNetLemmatizer 
 
+from numpy import dot
+from numpy.linalg import norm
 
 # Local imports
 from preprocessing import preprocess_input, preprocess_dataset
@@ -77,13 +79,13 @@ class QnABot():
 
         # === Initialize the model ===
         start = time()
-        if algorithm == 'word2vec':
+        if algorithm == 'word2vec' or algorithm == 'word2vecSum':
             q_tokens_list = list(token_dict.values())
             self.model = Word2Vec(q_tokens_list, size=100, window=3, min_count=0, workers=4, iter=10)
         elif algorithm == 'doc2vec':
             documents = [TaggedDocument(doc, [key]) for key, doc in token_dict.items()]
             self.model = Doc2Vec(documents,  vector_size=150, window=3, min_count=0, workers=4, epochs=10)
-        elif algorithm == 'fasttext':
+        elif algorithm == 'fasttext' or algorithm == 'fasttextSum':
             q_tokens_list = list(token_dict.values())
             self.model = FastText(size=100, window=3, min_count=0, sentences=q_tokens_list, iter=10)
         
@@ -211,6 +213,60 @@ class QnABot():
 
             return retval
 
+        # Word2Vec - stragety: sum all of the word vectors and compare ----------------------------------------------------------------
+        elif self.algorithm == 'word2vecSum' or self.algorithm == 'fasttextSum':
+
+            # Sum up all the input tokens word vectors
+            summed_input_vector = None
+            for input_token in input_tokens:
+                word_vector = self.model.wv[input_token]
+                if word_vector is None:
+                    continue
+                if summed_input_vector is None:
+                    summed_input_vector = word_vector
+                else:
+                    summed_input_vector = summed_input_vector + word_vector
+
+
+            # ids = ids of 100 documents from high recall model
+            for id in ids:
+                question = self.dataset[id][0]
+                
+                question = preprocess_input(question, lemmatize=self.lemmatize)
+
+                summed_question_vector = None
+                for q_token in question:
+                    word_vector = self.model.wv[q_token]
+                    if word_vector is None: 
+                        continue
+                    if summed_question_vector is None:
+                        summed_question_vector = word_vector
+                    else:
+                        summed_question_vector = summed_question_vector + word_vector
+
+                    # Compute similarity between the summed input vector
+                    # and the summed question vector:
+                    
+                    # cosine simm
+                    q_similarity_scores[id] = self._cosine(summed_input_vector, summed_question_vector)
+
+                    # something else? maybe word2vec.wv.similarity()
+
+            sorted_by_sim = {id: sim for id, sim in sorted(q_similarity_scores.items(), key = lambda x: x[1], reverse=True)}
+
+            # Return the top 10 results
+            retval = []
+            i = 0
+            for res in sorted_by_sim:
+                retval.append((res, self.dataset[res]))
+                i += 1
+                if i == 10:
+                    break
+
+            return retval
+
+
+
         # DOC2VEC ALGORITHM --------------------------------------------------------------------------------------------
         elif self.algorithm == 'doc2vec':
             input_tokens = list(input_tokens.keys())
@@ -287,6 +343,7 @@ class QnABot():
 
             return retval
 
+
     # ------------------------------------------------------------------------------------------------------------------
     def _extract_questions(self, dataset):
         '''
@@ -315,3 +372,13 @@ class QnABot():
             ret[key] = str(val[1])
 
         return ret
+
+
+    def _cosine(self, v1, v2):
+        '''
+        
+        :param list v1: vector represented as list
+        :param list v2: vector represented as list
+        '''
+        # return spatial.distance.cosine(v1, v2)
+        return dot(v1, v2) / (norm(v1) * norm(v2))
