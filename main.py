@@ -173,7 +173,7 @@ def run_comparison_testing(dataset_dict, wanted_questions):
 
 
     plt.plot(x_range, horizontal_line)
-    plt.plot(x_range, [val[0] for val in y_ax], 'o', label="Word2Vec", markersize=11)
+    plt.plot(x_range, [val[0] for val in y_ax], 'o', color='b', label="Word2Vec", markersize=11)
     plt.plot(x_range, [val[1] for val in y_ax], 'o', label="Doc2Vec", markersize=8)
     plt.plot(x_range, [val[2] for val in y_ax], 'o', label="FastText", markersize=5)
 
