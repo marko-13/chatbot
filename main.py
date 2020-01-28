@@ -12,6 +12,7 @@ from preprocessing import preprocess_dataset, preprocess_input
 from bot import QnABot
 from indexing import Indexer
 from test import testing
+from paraphrazer import send_req
 
 # ----------------------------------------------------------------------------------------------------------------------
 # TODO
@@ -203,6 +204,21 @@ def run_comparison_testing(dataset_dict, wanted_questions):
 
 if __name__ == "__main__":
     print("Poceo u: " + str(datetime.datetime.now()))
+
+    with open('insurance_qna_dataset.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter='\t')
+        line_count = 0
+        for row in csv_reader:
+            # Skip first line
+            if line_count == 0:
+                line_count = line_count + 1
+            else:
+                # If answer(row[2]) does not exist, skip
+                if row[2] == '':
+                    continue
+                send_req(row[1])
+
+
 
     # read csv file and return {id, [question, answer]}
     dict = index_dataset()
