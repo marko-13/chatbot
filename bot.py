@@ -223,7 +223,7 @@ class QnABot():
                 # Only accept word that have an idf score
                 # >= 5
                 try:
-                    if word2tfidf[input_token] < 4:
+                    if word2tfidf[input_token] < 5:
                         continue
                 except KeyError:
                     continue
