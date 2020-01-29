@@ -35,13 +35,24 @@ password_field.send_keys(garbage_mail)
 submit_login_btn = driver.find_element_by_id('login-button')
 submit_login_btn.click()
 
-# Select creative
-
 # Wait for login to happen
 time.sleep(5)
 
+
+# Select creative
+
+
 creative_radio = driver.find_element_by_xpath('//*[@id="everythingContainer"]/div/div/div[2]/div[3]/div[1]/div[1]/div/div[2]/div[2]/div/div[2]/div[2]/div[4]')
 creative_radio.click()
+
+time.sleep(1)
+
+# Set 'Word Flipper' to value=0
+word_filpper = driver.find_element_by_id('myRange')
+# word_filpper.send_keys(0)
+driver.execute_script("arguments[0].value = '0';", word_filpper)
+
+time.sleep(2)
 
 # Select the input field, output field and action button
 
@@ -59,7 +70,7 @@ questions = df['Question']
 
 paraphrazed_questions = []
 
-for question in questions[:100]:
+for question in questions[:2250:5]:
     input_field.clear()
     input_field.send_keys(question)
 
@@ -76,5 +87,9 @@ for question in questions[:100]:
 
 
     words = " ".join(words)
+    paraphrazed_questions.append(words)
     print('Question: ' + question)
     print(words)
+
+
+ser = pd.Series(paraphrazed_questions).to_csv('paraphrazed_long_step_5.csv', sep='\t')
