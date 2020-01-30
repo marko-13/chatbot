@@ -13,8 +13,7 @@ from bot import QnABot
 from indexing import Indexer
 from test import testing
 
-from bot_rnn import Dataset
-
+from rnn_dataset import Dataset
 # ----------------------------------------------------------------------------------------------------------------------
 # TODO
 # Add weights to check similarity in word2vec similarity in typed question and list of questions
@@ -278,5 +277,6 @@ def rnn_training():
 
 
 if __name__ == "__main__":
-    # rnn_training()
-    testing()
+    rnn_training()
+    # testing()
+
