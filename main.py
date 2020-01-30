@@ -12,7 +12,6 @@ from preprocessing import preprocess_dataset, preprocess_input
 from bot import QnABot
 from indexing import Indexer
 from test import testing
-from paraphrazer import send_req
 
 # ----------------------------------------------------------------------------------------------------------------------
 # TODO
@@ -216,7 +215,6 @@ if __name__ == "__main__":
                 # If answer(row[2]) does not exist, skip
                 if row[2] == '':
                     continue
-                send_req(row[1])
 
 
 
