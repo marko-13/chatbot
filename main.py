@@ -265,7 +265,7 @@ def rnn_training():
     # read csv file and return {id, [question, answer]}
     dict_orig = index_dataset()
 
-    dict_paraphrazed = read_paraphrazed_dataset('paraphrazed_long_step_5.csv')
+    dict_paraphrazed = read_paraphrazed_dataset('paraphrazed_final_100.csv')
 
     dataset = Dataset(dict_orig, dict_paraphrazed, 5)
 
