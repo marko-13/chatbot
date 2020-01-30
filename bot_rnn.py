@@ -5,6 +5,18 @@ from rnn_dataset import Dataset
 
 class RNNModel():
 
+    '''
+    TODO:
+        1. Napisati funkciju za trening modela (koristi se rnn_dataset.Dataset klasa, 
+            tamo se nalaze sve utility funkcije za izvlacenje originalnih stringova pitanja
+            i parafraziranih pitanja, kao i iteriranje kroz trening skup slicnih i ne slicnih
+            parova pitanja)
+        2. Napisati funkcije za snimanje i ucitavanje modela sa diska
+        3. Napisati funkciju koja prima string (input od korisnika), iskorisit high recall
+            algoritam za pronalazenje top 100 slicnih pitanja, pa iz njih izvlaci najbolje
+            pomocu RNN-a. (Pogledati bot.py fajl, funkcija 'process input')
+    '''
+
     def __init__(self, dataset):
         
 
