@@ -13,6 +13,8 @@ from bot import QnABot
 from indexing import Indexer
 from test import testing
 
+from bot_rnn import Dataset
+
 # ----------------------------------------------------------------------------------------------------------------------
 # TODO
 # Add weights to check similarity in word2vec similarity in typed question and list of questions
@@ -47,6 +49,16 @@ def index_dataset():
                 pom.append(row[1])
                 pom.append(row[2].rstrip())
                 dict.update({int(row[0]): pom})
+    return dict
+
+
+def read_paraphrazed_dataset(filename):
+    dict = {}
+
+    with open(filename) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter='\t')
+        for row in csv_reader:
+            dict[int(row[0])] = row[1]
     return dict
 
 
@@ -198,10 +210,11 @@ def run_comparison_testing(dataset_dict, wanted_questions):
     plt.savefig('log/with_lemm.png')
     plt.show()
 
-# ----------------------------------------------------------------------------------------------------------------------
 
 
-if __name__ == "__main__":
+
+def testing():
+
     print("Poceo u: " + str(datetime.datetime.now()))
 
     with open('insurance_qna_dataset.csv') as csv_file:
@@ -247,3 +260,22 @@ if __name__ == "__main__":
 
     run_comparison_testing(dict, wanted_questions)
 
+# ------------------------------------------------------------------------------------------------
+
+def rnn_training():
+    # read csv file and return {id, [question, answer]}
+    dict_orig = index_dataset()
+
+    dict_paraphrazed = read_paraphrazed_dataset('paraphrazed_long_step_5.csv')
+
+    dataset = Dataset(dict_orig, dict_paraphrazed, 5)
+
+
+
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+if __name__ == "__main__":
+    rnn_training()
