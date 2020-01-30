@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 
+import random
 from random import randrange
 
 class Dataset():
@@ -55,18 +56,36 @@ class Dataset():
 
             self.non_similar_pairs.append(pair)
 
-        print("Similar questions: ")
-        print(self.similar_pairs[:5])
+        # print("Similar questions: ")
+        # print(self.similar_pairs[:5])
 
-        print("Non similar questions: ")
-        print(self.non_similar_pairs[:5])
+        # print("Non similar questions: ")
+        # print(self.non_similar_pairs[:5])
 
-        self.mixed_pairs = self.similar_pairs.append(self.non_similar_pairs)
+        self.mixed_pairs = self.similar_pairs.copy()
+        self.mixed_pairs = self.mixed_pairs + self.non_similar_pairs.copy()
 
-        # Shuffle the dataset
-        # random.shuffle(self.mixed_pairs)
+        # print(len(self.mixed_pairs))
+        # print(self.mixed_pairs[:10])
+
+        self._copy_mixed_pairs()
+
+        # print(self.mixed_pairs_copy[:10])
 
 
+    def get_next_pair(self):
+        '''
+        Fetch a random datapoint.
+        '''
+        if self.mixed_pairs_copy == []:
+            # Reset the copied mixed pairs list
+            self._copy_mixed_pairs() 
+            return None
 
+        rand_index = randrange(len(self.mixed_pairs_copy))
+        
+        return self.mixed_pairs_copy.pop(rand_index)
 
-
+    def _copy_mixed_pairs(self):
+        self.mixed_pairs_copy = self.mixed_pairs.copy()
+        random.shuffle(self.mixed_pairs_copy)
