@@ -86,3 +86,9 @@ class Dataset():
     def _copy_mixed_pairs(self):
         self.mixed_pairs_copy = self.mixed_pairs.copy()
         random.shuffle(self.mixed_pairs_copy)
+
+    def get_original_question(self, key):
+        return self.complete_dataset[key][0]
+
+    def get_paraphrized_question(self, key):
+        return self.paraphrazed_dataset[key]
