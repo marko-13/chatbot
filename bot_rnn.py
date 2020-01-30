@@ -24,13 +24,17 @@ class RNNModel():
 
         self.model = tf.keras.Sequential()
 
-                
-        # TODO: figure out how to count the corpus words
-        tokens = tf.keras.preprocessing.text.text_to_word_sequence(dataset, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True,
+        all_tokens = []
+        for question in Dataset.get_original_dataset_questions():
+            tokens = tf.keras.preprocessing.text.text_to_word_sequence(question, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True,
                                                        split=' ')
+            for t in tokens:
+                if t not in all_tokens:
+                    all_tokens.append(t)
 
 
-        self.model.add(layers.Embedding(len(tokens)))
+
+        self.model.add(layers.Embedding(len(all_tokens)))
 
         self.model.add(layers.LSTM(128))
 
