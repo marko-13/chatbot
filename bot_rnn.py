@@ -1,10 +1,16 @@
 import tensorflow as tf
 from tensorflow import keras
 
+from random import randrange
+
 class Dataset():
 
     def __init__(self, complete_dataset, paraphrazed_dataset, paraphrazed_step=1):
         '''
+        NOTE: In this class, we're treating the keys of the complete_dataset as 
+              Integers, but they are stored as Strings in the complete_dataset
+              dict. Watch out for that!
+
         The dataset needs to create pairs (original qestion, paraphrazed question),
         labeled with 0s and 1s, which represent if the pair contains similar 
         questions or not.
@@ -31,9 +37,35 @@ class Dataset():
         # Create similar pairs ((paraphrazed_id, q_from_orig_dataset), 0 or 1) 
 
         for par_q in paraphrazed_dataset:
-            orig_key = par_q * self.paraphrazed_step
-            pair = ((par_q, orig_key), 1)
+            orig_key = int(par_q) * self.paraphrazed_step
+            pair = ((int(par_q), str(orig_key)), 1)
             self.similar_pairs.append(pair)
+
+        # Create non similar pairs
+
+        all_keys = complete_dataset.keys()
+        similar_keys = [key for ((par, key), sim) in self.similar_pairs]
+
+        non_similar_keys = [x for x in all_keys if x not in similar_keys]
+
+        for par_q in paraphrazed_dataset:
+            random_index = randrange(len(non_similar_keys))
+            random_question = non_similar_keys[random_index]
+            pair = ((par_q, str(random_question)), 0)
+
+            self.non_similar_pairs.append(pair)
+
+        print("Similar questions: ")
+        print(self.similar_pairs[:5])
+
+        print("Non similar questions: ")
+        print(self.non_similar_pairs[:5])
+
+        self.mixed_pairs = self.similar_pairs.append(self.non_similar_pairs)
+
+        # Shuffle the dataset
+        # random.shuffle(self.mixed_pairs)
+
 
 
 
