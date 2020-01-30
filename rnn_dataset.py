@@ -59,34 +59,65 @@ class Dataset():
         print("Non similar questions: ")
         print(self.non_similar_pairs[:5])
 
-        self.mixed_pairs = self.similar_pairs.copy()
-        self.mixed_pairs = self.mixed_pairs + self.non_similar_pairs.copy()
+        self.num_instances = len(self.paraphrazed_dataset)
+
+        train_num_inst = int(self.num_instances * 0.8)
+
+        # Define the train set
+        self.mixed_pairs_train = self.similar_pairs.copy()[:train_num_inst]
+        self.mixed_pairs_train = self.mixed_pairs_train + self.non_similar_pairs.copy()[:train_num_inst]
+
+        # Define the test set
+        self.mixed_pairs_test = self.similar_pairs.copy()[train_num_inst:]
+        self.mixed_pairs_test = self.mixed_pairs_test + self.non_similar_pairs.copy()[train_num_inst:]
 
         # print(len(self.mixed_pairs))
         # print(self.mixed_pairs[:10])
 
+        # Copy the training and testing sets
         self._copy_mixed_pairs()
+        self._copy_mixed_pairs(train=False)
 
-        print(self.mixed_pairs_copy[:10])
+        print('Training set:')
+        print(len(self.mixed_pairs_train_copy))
+        print(self.mixed_pairs_train_copy[:10])
+
+        print('Test set:')
+        print(len(self.mixed_pairs_test_copy))
+        print(self.mixed_pairs_test_copy[:10])
 
 
     def get_next_pair(self):
         '''
-        Fetch a random datapoint. Will return None if it is empty, 
+        Fetch a random datapoint from the training set. Will return None if it is empty, 
         and will reset the list, for use in the next epoch
         '''
-        if self.mixed_pairs_copy == []:
+        if self.mixed_pairs_train_copy == []:
             # Reset the copied mixed pairs list
             self._copy_mixed_pairs() 
             return None
 
-        rand_index = randrange(len(self.mixed_pairs_copy))
+        rand_index = randrange(len(self.mixed_pairs_train_copy))
         
-        return self.mixed_pairs_copy.pop(rand_index)
+        return self.mixed_pairs_train_copy.pop(rand_index)
 
-    def _copy_mixed_pairs(self):
-        self.mixed_pairs_copy = self.mixed_pairs.copy()
-        random.shuffle(self.mixed_pairs_copy)
+    def get_next_pair_test(self):
+        if self.mixed_pairs_test_copy == []:
+            # Reset the copied mixed pairs list
+            self._copy_mixed_pairs(train=False) 
+            return None
+
+        rand_index = randrange(len(self.mixed_pairs_test_copy))
+        
+        return self.mixed_pairs_test_copy.pop(rand_index)
+
+    def _copy_mixed_pairs(self, train=True):
+        if train:
+            self.mixed_pairs_train_copy = self.mixed_pairs_train.copy()
+            random.shuffle(self.mixed_pairs_train_copy)
+        else:
+            self.mixed_pairs_test_copy = self.mixed_pairs_test.copy()
+            random.shuffle(self.mixed_pairs_test_copy)
 
     def get_original_question(self, key):
         return self.complete_dataset[key][0]
