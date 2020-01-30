@@ -14,6 +14,7 @@ from indexing import Indexer
 from test import testing
 
 from rnn_dataset import Dataset
+from bot_rnn import RNNModel
 # ----------------------------------------------------------------------------------------------------------------------
 # TODO
 # Add weights to check similarity in word2vec similarity in typed question and list of questions
@@ -268,7 +269,10 @@ def rnn_training():
     dict_paraphrazed = read_paraphrazed_dataset('paraphrazed_final_100.csv')
 
     dataset = Dataset(dict_orig, dict_paraphrazed, 5)
+    save_object(dataset, f'./objects/rnn_dataset_object.pickle')
 
+    # print(dataset)
+    rnn_model = RNNModel()
 
 
 

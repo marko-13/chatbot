@@ -128,9 +128,9 @@ class Dataset():
     def get_original_dataset_keys(self):
         return self.complete_dataset.keys()
 
+#  OVO SAM MENJAO BILO JE U FORU self.get_original_question
     def get_original_dataset_questions(self):
         retval = []
-        for key in self.get_original_dataset_keys:
+        for key in self.complete_dataset.keys():
             retval.append(self.complete_dataset[key][0])
         return retval
-    
