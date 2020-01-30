@@ -278,4 +278,5 @@ def rnn_training():
 
 
 if __name__ == "__main__":
-    rnn_training()
+    # rnn_training()
+    testing()
