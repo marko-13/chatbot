@@ -72,7 +72,8 @@ class Dataset():
 
     def get_next_pair(self):
         '''
-        Fetch a random datapoint.
+        Fetch a random datapoint. Will return None if it is empty, 
+        and will reset the list, for use in the next epoch
         '''
         if self.mixed_pairs_copy == []:
             # Reset the copied mixed pairs list
@@ -92,3 +93,13 @@ class Dataset():
 
     def get_paraphrized_question(self, key):
         return self.paraphrazed_dataset[key]
+
+    def get_original_dataset_keys(self):
+        return self.complete_dataset.keys()
+
+    def get_original_dataset_questions(self):
+        retval = []
+        for key in self.get_original_dataset_keys:
+            retval.append(self.complete_dataset[key][0])
+        return retval
+    
