@@ -271,8 +271,27 @@ def rnn_training():
     dataset = Dataset(dict_orig, dict_paraphrazed, 5)
     save_object(dataset, f'./objects/rnn_dataset_object.pickle')
 
-    # print(dataset)
-    rnn_model = RNNModel()
+    dict_q_paraq = read_paraphrazed_dataset('paraphrazed_final_100.csv')
+    # print(dict_q_paraq)
+    brojac = 0
+    list_of_pairs = []
+    pair_y = []
+    # print(len(dataset.mixed_pairs_train))
+    for i in range(0, len(dataset.mixed_pairs_train)):
+        next_pair = dataset.get_next_pair()
+        # print(next_pair)
+        pair = []
+        # print(next_pair[0][0])
+        # print(next_pair[0][1])
+        pair.append(dict_q_paraq[next_pair[0][0]])
+        pair.append(dict_orig[int(next_pair[0][1])][0])
+        # print(dict_orig[next_pair[0][1]])
+        pair_y.append((next_pair[1]))
+        list_of_pairs.append(pair)
+
+    # print(list_of_pairs)
+    # print(pair_y)
+    rnn_model = RNNModel(list_of_pairs, pair_y)
 
 
 

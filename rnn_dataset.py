@@ -53,11 +53,11 @@ class Dataset():
 
             self.non_similar_pairs.append(pair)
 
-        print("Similar questions: ")
-        print(self.similar_pairs[:5])
+        # print("Similar questions: ")
+        # print(self.similar_pairs[:5])
 
-        print("Non similar questions: ")
-        print(self.non_similar_pairs[:5])
+        # print("Non similar questions: ")
+        # print(self.non_similar_pairs[:5])
 
         self.num_instances = len(self.paraphrazed_dataset)
 
@@ -78,13 +78,13 @@ class Dataset():
         self._copy_mixed_pairs()
         self._copy_mixed_pairs(train=False)
 
-        print('Training set:')
-        print(len(self.mixed_pairs_train_copy))
-        print(self.mixed_pairs_train_copy[:10])
-
-        print('Test set:')
-        print(len(self.mixed_pairs_test_copy))
-        print(self.mixed_pairs_test_copy[:10])
+        # print('Training set:')
+        # print(len(self.mixed_pairs_train_copy))
+        # print(self.mixed_pairs_train_copy[:10])
+        #
+        # print('Test set:')
+        # print(len(self.mixed_pairs_test_copy))
+        # print(self.mixed_pairs_test_copy[:10])
 
 
     def get_next_pair(self):
@@ -128,7 +128,7 @@ class Dataset():
     def get_original_dataset_keys(self):
         return self.complete_dataset.keys()
 
-#  OVO SAM MENJAO BILO JE U FORU self.get_original_question
+#  OVO SAM MENJAO BILO JE U KREIRANJU FORA self.get_original_question
     def get_original_dataset_questions(self):
         retval = []
         for key in self.complete_dataset.keys():
