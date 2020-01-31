@@ -128,6 +128,6 @@ def split_and_zero_padding(quesion_paraquestion, max_seq_len, token_dict, inv_to
     print(ret_val)
     return ret_val
 
+# slicnost izmedju dva izlaza iz sijamske mreze
 def exponent_neg_manhattan_distance(left, right):
-    ''' Helper function for the similarity estimate of the LSTMs outputs'''
     return K.exp(-K.sum(K.abs(left-right), axis=1, keepdims=True))
