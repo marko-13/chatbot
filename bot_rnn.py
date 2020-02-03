@@ -10,6 +10,15 @@ from tensorflow.keras.models import model_from_json
 from rnn_dataset import Dataset
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
+from tensorflow.keras.layers import Input, Lambda, Embedding, LSTM
+
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adadelta
+
+
+import os
+
+
 class RNNModel():
 
     '''
@@ -24,7 +33,24 @@ class RNNModel():
             pomocu RNN-a. (Pogledati bot.py fajl, funkcija 'process input')
     '''
 
-    def __init__(self, list_of_pairs, pair_y):
+    def __init__(self, list_of_pairs, pair_y, train=False):
+
+        if train:
+            self.train_model(list_of_pairs, pair_y)
+        else:
+            self.load_model()
+
+
+    def get_model(self):
+        return self.model
+
+    def load_model(self):
+
+        if os.path.exists('serialization_folder/neuronska.json'):
+
+            self.model = self.load_trained_ann()
+
+    def train_model(self, list_of_pairs, pair_y):
 
 
         # find all disinct words(tokens) from original questions
@@ -45,34 +71,88 @@ class RNNModel():
                     all_tokens.append(t)
 
 
-
-        self.model = tf.keras.Sequential()
-        self.model.add(layers.Embedding(input_dim=len(all_tokens)+1, output_dim=100))
-        self.model.add(layers.LSTM(128))
-        self.model.add(layers.Dense(10, activation='relu'))
-        self.model.add(layers.Dense(1, activation='sigmoid'))
-
-        self.model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-        self.model.summary()
-
         X_train_para = []
         X_train_orig = []
         for pairs in list_of_pairs:
             X_train_para.append(split_and_zero_padding(pairs[0], 15, token_dict, inv_token_dict))
             X_train_orig.append(split_and_zero_padding(pairs[1], 15, token_dict, inv_token_dict))
 
+        # print("TOKENS")
+        # print(all_tokens[:5])
+        # print('\n\n')
+
+        # DEFINE THE EMBEDDING
+
+        embedding_dim = len(all_tokens)
+        embeddings = 1 * np.random.rand(embedding_dim + 1, embedding_dim) 
+        embeddings[0] = 0
+
+        # Embeded 1-hot vector representation
+        print(len(token_dict.items()))
+        for index, word in token_dict.items():
+            vec = [0 for i in range(embedding_dim)]
+            vec[index - 1] = 1
+            embeddings[index] = vec
+
+        # self.model = tf.keras.Sequential()
+        # self.model.add(layers.Embedding(input_dim=len(all_tokens)+1, output_dim=100))
+        # self.model.add(layers.LSTM(128))
+        # self.model.add(layers.Dense(150, activation='relu'))
+        # self.model.add(layers.Dense(1, activation='sigmoid'))
+
+        left_input = Input(shape=(15,), dtype="int32")
+        right_input = Input(shape=(15,), dtype="int32")
+
+        embedding_layer = Embedding(len(embeddings), output_dim = embedding_dim, weights=[embeddings], input_length = 15, trainable=False)
+
+        encoded_left = embedding_layer(left_input)
+        encoded_right = embedding_layer(right_input)
+
+        # Define LSTM layer
+
+        shared_lstm = LSTM(128)
+
+        # Propusti enkodovane recenice
+
+        left_output = shared_lstm(encoded_left)
+        right_output = shared_lstm(encoded_right)
+
+        # Calculate distance from the outputs
+
+        # dist = Lambda(function = lambda x: )
+        malstm_distance = Lambda(function=lambda x: exponent_neg_manhattan_distance(x[0], x[1]),output_shape=lambda x: (x[0][0], 1))([left_output, right_output])
+
+        malstm_model = Model([left_input, right_input], [malstm_distance])
+
+        optimizer = Adadelta(clipnorm = 1.25, lr=0.1)
+
+        
+
+        malstm_model.compile(optimizer=optimizer, loss='mean_squared_error', metrics=['accuracy'])
+        # self.model.summary()
+
 
         # Start training
         # TODO
         # jos treba istrenirati mrezu, podaci su spremni, padding odradjen, word embedding isto, sve je stavljeno
         # u liste odgovarajuce duzine
-        ma_lstm_trained = self.model.fit(X_train_orig, X_train_para, pair_y, batch_size=32, epochs=50)
+        X_train_orig = [x[0] for x in X_train_orig]
+        X_train_para = [x[0] for x in X_train_para]
+        X_train_orig = np.array(X_train_orig)
+        print(X_train_orig.shape)
+        print(X_train_orig[0])
+        X_train_para = np.array(X_train_para)
+        print(X_train_para.shape)
+        pair_y = np.array(pair_y)
+        malstm_trained = malstm_model.fit([X_train_orig, X_train_para], pair_y, batch_size=32, epochs=50)
 
+        self.serialize_ann(malstm_model)
 
         # self.model.save('./objects/SiameaseLSTM.h5')
 
-        # PRVO URADITI FIT PA SACUVATI MODEL
+        print("Training time finished.\n{} epochs in {}".format(n_epoch))
 
+        self.model = malstm_model
 
     def serialize_ann(self, rnn):
             # serijalizuj arhitekturu neuronske mreze u JSON fajl
@@ -123,9 +203,9 @@ def split_and_zero_padding(quesion_paraquestion, max_seq_len, token_dict, inv_to
     ret_val = pad_sequences(word_embedding_matrix, padding='pre', truncating='post', maxlen=max_seq_len)
 
     # embedding za recenicu
-    print(word_embedding_matrix)
+    # print(word_embedding_matrix)
     # embeddings za recenicu nakon paddinga
-    print(ret_val)
+    # print(ret_val)
     return ret_val
 
 # slicnost izmedju dva izlaza iz sijamske mreze

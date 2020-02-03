@@ -291,7 +291,9 @@ def rnn_training():
 
     # print(list_of_pairs)
     # print(pair_y)
-    rnn_model = RNNModel(list_of_pairs, pair_y)
+    rnn_model = RNNModel(list_of_pairs, pair_y, False)
+
+    return rnn_model.get_model()
 
 
 
@@ -300,6 +302,14 @@ def rnn_training():
 
 
 if __name__ == "__main__":
-    rnn_training()
+    model = rnn_training()
+
+    print("Unesi nesto")
+    q = input()
+
+    print(model(q))
+
     # testing()
+
+
 
