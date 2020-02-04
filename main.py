@@ -262,7 +262,7 @@ def testing():
 
 # ------------------------------------------------------------------------------------------------
 
-def rnn_training():
+def rnn_training(train=True):
     # read csv file and return {id, [question, answer]}
     dict_orig = index_dataset()
 
@@ -291,9 +291,9 @@ def rnn_training():
 
     # print(list_of_pairs)
     # print(pair_y)
-    rnn_model = RNNModel(list_of_pairs, pair_y, False)
+    rnn_model = RNNModel(list_of_pairs, pair_y, train=train)
 
-    return rnn_model.get_model()
+    return rnn_model
 
 
 
@@ -302,14 +302,48 @@ def rnn_training():
 
 
 if __name__ == "__main__":
-    model = rnn_training()
+    # Training
+    # model = rnn_training()
 
-    print("Unesi nesto")
+    # NOTE: Ako treba trenirati, zakomentarisati sve pre ovoga
+
+
+    # Live use 
+
+    model_wrapper = rnn_training(train=False)
+    model = model_wrapper.get_model()
+
+    dataset = index_dataset()
+
+    # Use one of the older bots for the high recall algorithm
+    loader_bot = get_bot(dataset, 'word2vec', False)
+
+    print("Type in your question:")
     q = input()
+    print()
 
-    print(model(q))
+    while q is not 'q':
+        # High recall
+        high_recall = loader_bot.get_k_nearest_ids(q)
+        # print(a)
 
-    # testing()
+        # Extract q/a pairs
+        h_r_qa_pairs = {}
+        for id in high_recall:
+            h_r_qa_pairs[id] = dataset[id]
 
+        rnn_result = model_wrapper.process_input(q, h_r_qa_pairs)
 
+        # print(rnn_result[:5])
+        i = 0
+        for key in rnn_result:
+            print(f"{i})")
+            print(rnn_result[key][1])
+            
+            i += 1
+            if i == 5:
+                break
 
+        print("Type in your question:")
+        q = input()
+        print()

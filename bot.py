@@ -62,7 +62,7 @@ class QnABot():
         x_tf_idf = self.tf_idf_transformer.transform(X)
 
         # changed metric from manhattan to euclidean
-        self.nbrs = NearestNeighbors(n_neighbors=10, algorithm='ball_tree', metric='euclidean').fit(x_tf_idf)
+        self.nbrs = NearestNeighbors(n_neighbors=100, algorithm='ball_tree', metric='euclidean').fit(x_tf_idf)
 
         print(f"[Bot] Initialization of tf-idf and KNN: {time() - start}")
 
@@ -100,6 +100,17 @@ class QnABot():
         # Save the raw user input string
         raw_input = Y
 
+        k_nearest_ids = self.get_k_nearest_ids(Y)
+
+        # Compute similarity scores for all k nearest questions
+        # Function for similarity depends on algorithm(fasttext, doc2vec, word2vec)
+        top_hits = self._compute_similarity(raw_input, k_nearest_ids)
+
+        return top_hits
+
+    
+    # ------------------------------------------------------------------------------------------------------------------
+    def get_k_nearest_ids(self, Y, k=100):
         #  === High Recall model ===
         # Get possibly relevant documents using tf-idf vectors and the KNN algorithm
 
@@ -111,11 +122,7 @@ class QnABot():
 
         k_nearest_ids = ids[0]
 
-        # Compute similarity scores for all k nearest questions
-        # Function for similarity depends on algorithm(fasttext, doc2vec, word2vec)
-        top_hits = self._compute_similarity(raw_input, k_nearest_ids)
-
-        return top_hits
+        return k_nearest_ids
 
     # ------------------------------------------------------------------------------------------------------------------
     def _compute_similarity(self, raw_input, ids, n_hits=10):
