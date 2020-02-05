@@ -337,8 +337,13 @@ if __name__ == "__main__":
         # print(rnn_result[:5])
         i = 0
         for key in rnn_result:
+            # question = rnn_result[key][0][1][0]
+            # answer = rnn_result[key][0][1][1]
+            # print(f"{i})")
+            # print(f">>>{question}\n\t - {answer}")
             print(f"{i})")
-            print(rnn_result[key][1])
+            print(rnn_result[key])
+            print()
             
             i += 1
             if i == 5:
