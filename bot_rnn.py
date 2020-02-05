@@ -91,12 +91,14 @@ class RNNModel():
         #     vec[index - 1] = 1
         #     embeddings[index] = vec
 
-        # GloVe encoding
-        self.embedding_dim = 100
+
 
         # DICT
         self.glove_rep = self._load_glove()
         # self.embeddings = self._load_glove()
+
+        # GloVe encoding
+        self.embedding_dim = len(self.glove_rep['if'])
 
         # Convert the dict to a numpy matrix
         self.embeddings = np.zeros((len(all_tokens) + 1, self.embedding_dim))
@@ -119,9 +121,9 @@ class RNNModel():
 
     def _load_glove(self):
         '''
-        Read glove vectors frome the './glove/'
+        Read glove vectors from the './glove/'
         '''
-        f = open('glove/glove.6B.100d.txt','r')
+        f = open('glove/glove.6B.300d.txt','r')
         model = {}
         for line in f:
             splitLine = line.split()
@@ -255,7 +257,7 @@ class RNNModel():
             # WOW, trebalo je konvertovati u tf.Tensor
             dist = self.model([tf.convert_to_tensor(preprocessed_input), tf.convert_to_tensor(question)])
             # print(dist)
-            ret_dict[key] = (dist, [high_recall_questions[key]])
+            ret_dict[key] = (dist, [high_recall_questions[key]], key)
 
         # Sort by distance
         ret_dict = {k: v for k, v in sorted(ret_dict.items(), key= lambda item: item[1][0])}
