@@ -49,10 +49,9 @@ class RNNModel():
         self.model = tf.keras.Sequential()
         self.model.add(layers.Embedding(input_dim=len(all_tokens)+1, output_dim=100))
         self.model.add(layers.LSTM(128))
-        self.model.add(layers.Dense(10, activation='relu'))
-        self.model.add(layers.Dense(1, activation='sigmoid'))
 
-        self.model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+        self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
         self.model.summary()
 
         X_train_para = []
