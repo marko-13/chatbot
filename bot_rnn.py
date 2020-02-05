@@ -17,12 +17,10 @@ from tensorflow.keras.optimizers import Adadelta
 
 from tensorflow import Tensor
 
-
 import os
 
 
 class RNNModel():
-
     '''
     TODO:
         1. Napisati funkciju za trening modela (koristi se rnn_dataset.Dataset klasa, 
@@ -36,7 +34,6 @@ class RNNModel():
     '''
 
     def __init__(self, list_of_pairs, pair_y, train=False):
-
 
         # find all disinct words(tokens) from original questions
         token_dict = {}
@@ -55,15 +52,6 @@ class RNNModel():
                     # print(t)
                     all_tokens.append(t)
 
-
-
-        self.model = tf.keras.Sequential()
-        self.model.add(layers.Embedding(input_dim=len(all_tokens)+1, output_dim=100))
-        self.model.add(layers.LSTM(128))
-
-
-        self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-        self.model.summary()
         self.token_dict = token_dict
         self.inv_token_dict = inv_token_dict
 
@@ -81,7 +69,7 @@ class RNNModel():
 
         # - 1hot encoding
         # self.embedding_dim = len(all_tokens)
-        # embeddings = 1 * np.random.rand(self.embedding_dim + 1, self.embedding_dim) 
+        # embeddings = 1 * np.random.rand(self.embedding_dim + 1, self.embedding_dim)
         # embeddings[0] = 0
 
         # Embeded 1-hot vector representation
@@ -91,15 +79,12 @@ class RNNModel():
         #     vec[index - 1] = 1
         #     embeddings[index] = vec
 
-
-
         # DICT
         self.glove_rep = self._load_glove()
         # self.embeddings = self._load_glove()
 
         # GloVe encoding
         self.embedding_dim = len(self.glove_rep['if'])
-
         # Convert the dict to a numpy matrix
         self.embeddings = np.zeros((len(all_tokens) + 1, self.embedding_dim))
 
@@ -118,19 +103,18 @@ class RNNModel():
         else:
             self.load_model()
 
-
     def _load_glove(self):
         '''
-        Read glove vectors from the './glove/'
+        Read glove vectors frome the './glove/'
         '''
-        f = open('glove/glove.6B.300d.txt','r')
+        f = open('glove/glove.6B.200d.txt', 'r')
         model = {}
         for line in f:
             splitLine = line.split()
             word = splitLine[0]
             embedding = np.array([float(val) for val in splitLine[1:]])
             model[word] = embedding
-        print("Done.",len(model)," words loaded!")
+        print("Done.", len(model), " words loaded!")
         return model
 
     def get_model(self):
@@ -139,7 +123,6 @@ class RNNModel():
     def load_model(self):
 
         if os.path.exists('serialization_folder/neuronska.json'):
-
             self.model = self.load_trained_ann()
 
     def train_model(self, list_of_pairs, pair_y, X_train_orig, X_train_para):
@@ -147,7 +130,8 @@ class RNNModel():
         left_input = Input(shape=(15,), dtype="int32")
         right_input = Input(shape=(15,), dtype="int32")
 
-        embedding_layer = Embedding(len(self.embeddings), output_dim=self.embedding_dim, weights=[self.embeddings], input_length = 15, trainable=False)
+        embedding_layer = Embedding(len(self.embeddings), output_dim=self.embedding_dim, weights=[self.embeddings],
+                                    input_length=15, trainable=False)
 
         encoded_left = embedding_layer(left_input)
         encoded_right = embedding_layer(right_input)
@@ -169,19 +153,15 @@ class RNNModel():
         #     return exponent_neg_manhattan_distance(x[0], x[1])
 
         # dist = Lambda(function = lambda x: )
-        malstm_distance = Lambda(function=lambda x: exponent_neg_manhattan_distance(x[0], x[1]),output_shape=lambda x: (x[0][0], 1))([left_output, right_output])
+        malstm_distance = Lambda(function=lambda x: exponent_neg_manhattan_distance(x[0], x[1]),
+                                 output_shape=lambda x: (x[0][0], 1))([left_output, right_output])
         # malstm_distance = Lambda(function=lambda x: _lambda_internal(x), output_shape=lambda x: (x[0][0], 1))([left_output, right_output])
-
-
-
-
 
         malstm_model = Model([left_input, right_input], [malstm_distance])
 
-        optimizer = Adadelta(clipnorm = 1.25, lr=0.01)
+        optimizer = Adadelta(clipnorm=1.25, lr=0.001)
 
         def custom_loss(layer):
-
             def loss(label, distance):
                 '''
                 label: - 0: not similar
@@ -193,8 +173,9 @@ class RNNModel():
                 # if label == 0:
                 #     print(f"Dist: {distance}")
 
-                # return Tensor(label * 0.5 * (distance ** 2) + (1 - label) * 0.5 (max(0, 1.25 - distance) ** 2)) 
-                return label * 0.5 * K.square(distance) +  (1 - label) * 0.5 * K.square(K.maximum(K.zeros_like(distance, dtype=tf.float32), (0.5 - distance))) # NOT THE EXACT
+                # return Tensor(label * 0.5 * (distance ** 2) + (1 - label) * 0.5 (max(0, 1.25 - distance) ** 2))
+                return label * 0.5 * K.square(distance) + (1 - label) * 0.5 * K.square(
+                    K.maximum(K.zeros_like(distance, dtype=tf.float32), (0.5 - distance)))  # NOT THE EXACT
 
             return loss
 
@@ -202,7 +183,6 @@ class RNNModel():
         malstm_model.compile(optimizer=optimizer, loss=custom_loss(malstm_distance))
 
         malstm_model.summary()
-
 
         # Start training
         # TODO
@@ -216,8 +196,9 @@ class RNNModel():
         X_train_para = np.array(X_train_para)
         print(X_train_para.shape)
         pair_y = np.array(pair_y)
-        malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32, epochs=500,
-        validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
+        malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32,
+                                          epochs=2000,
+                                          validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
 
         self.serialize_ann(malstm_model)
 
@@ -229,11 +210,9 @@ class RNNModel():
 
     def process_input(self, user_input, high_recall_questions):
         '''
-
         Args:
             user_input (List[String]): the raw user input string
             high_recall_questions ({key, [question, answer]}): the top n results of a high recall model
-
         Returns:
             dict {key, (distance, [question, answer])}: Questions most similar to the user input
         '''
@@ -250,7 +229,6 @@ class RNNModel():
             # input = np.array([preprocessed_input, question])
             # print(input.shape)
 
-
             # print(f"IN: {preprocessed_input}, type: {type(preprocessed_input)}")
             # print(f"Q:  {question} type: {type(question)}")
 
@@ -260,13 +238,14 @@ class RNNModel():
             ret_dict[key] = (dist, [high_recall_questions[key]], key)
 
         # Sort by distance
-        ret_dict = {k: v for k, v in sorted(ret_dict.items(), key= lambda item: item[1][0])}
+        ret_dict = {k: v for k, v in sorted(ret_dict.items(), key=lambda item: item[1][0])}
 
         return ret_dict
 
-
     def _preprocess_user_input(self, user_input):
-        tokens = tf.keras.preprocessing.text.text_to_word_sequence(user_input, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True, split=' ')
+        tokens = tf.keras.preprocessing.text.text_to_word_sequence(user_input,
+                                                                   filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
+                                                                   lower=True, split=' ')
 
         # Convert words to their IDs
         word_id_list = []
@@ -279,37 +258,35 @@ class RNNModel():
                 pass
             except KeyError:
                 word_id_list.append[0]
-        
+
         # Pad the sequence
         padded = pad_sequences([word_id_list], padding='pre', truncating='post', maxlen=15)
         # print(padded)
 
         return padded[0]
 
-
-
     def serialize_ann(self, rnn):
-            # serijalizuj arhitekturu neuronske mreze u JSON fajl
-            model_json = rnn.to_json()
-            with open("serialization_folder/neuronska.json", "w") as json_file:
-                    json_file.write(model_json)
-            # serijalizuj tezine u HDF5 fajl
-            rnn.save_weights("serialization_folder/neuronska.h5")
+        # serijalizuj arhitekturu neuronske mreze u JSON fajl
+        model_json = rnn.to_json()
+        with open("serialization_folder/neuronska.json", "w") as json_file:
+            json_file.write(model_json)
+        # serijalizuj tezine u HDF5 fajl
+        rnn.save_weights("serialization_folder/neuronska.h5")
 
     def load_trained_ann(self):
-            try:
-                    # Ucitaj JSON i kreiraj arhitekturu neuronske mreze na osnovu njega
-                    json_file = open('serialization_folder/neuronska.json', 'r')
-                    loaded_model_json = json_file.read()
-                    json_file.close()
-                    ann = model_from_json(loaded_model_json)
-                    # ucitaj tezine u prethodno kreirani model
-                    ann.load_weights("serialization_folder/neuronska.h5")
-                    print("Istrenirani model uspesno ucitan.")
-                    return ann
-            except Exception as e:
-                    # ako ucitavanje nije uspelo, verovatno model prethodno nije serijalizovan pa nema odakle da bude ucitan
-                    return None
+        try:
+            # Ucitaj JSON i kreiraj arhitekturu neuronske mreze na osnovu njega
+            json_file = open('serialization_folder/neuronska.json', 'r')
+            loaded_model_json = json_file.read()
+            json_file.close()
+            ann = model_from_json(loaded_model_json)
+            # ucitaj tezine u prethodno kreirani model
+            ann.load_weights("serialization_folder/neuronska.h5")
+            print("Istrenirani model uspesno ucitan.")
+            return ann
+        except Exception as e:
+            # ako ucitavanje nije uspelo, verovatno model prethodno nije serijalizovan pa nema odakle da bude ucitan
+            return None
 
 
 def load_object(filename):
@@ -335,7 +312,7 @@ def split_and_zero_padding(quesion_paraquestion, max_seq_len, token_dict, inv_to
     # print(word_embedding_matrix)
 
     # word_embedding_matrix = np.asarray(word_embedding_matrix, dtype=np.float32)
-    word_embedding_matrix =([word_embedding_matrix])
+    word_embedding_matrix = ([word_embedding_matrix])
     ret_val = pad_sequences(word_embedding_matrix, padding='pre', truncating='post', maxlen=max_seq_len)
 
     # embedding za recenicu
@@ -343,6 +320,7 @@ def split_and_zero_padding(quesion_paraquestion, max_seq_len, token_dict, inv_to
     # embeddings za recenicu nakon paddinga
     # print(ret_val)
     return ret_val
+
 
 # slicnost izmedju dva izlaza iz sijamske mreze
 def exponent_neg_manhattan_distance(left, right):

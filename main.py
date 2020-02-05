@@ -8,11 +8,16 @@ import sys
 from matplotlib import pyplot as plt
 from nearest_neighbours import KNN
 
+import sys
+
+import tensorflow as tf
+
 # Local imports
 from preprocessing import preprocess_dataset, preprocess_input
 from bot import QnABot
 from indexing import Indexer
 from test import testing
+
 
 from rnn_dataset import Dataset
 from bot_rnn import RNNModel
@@ -306,8 +311,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         # Training
         model = rnn_training()
-
-    # NOTE: Ako treba trenirati, zakomentarisati sve pre ovoga
     else:
         # Live use
 
@@ -338,13 +341,19 @@ if __name__ == "__main__":
             # print(rnn_result[:5])
             i = 0
             for key in rnn_result:
-                # question = rnn_result[key][0][1][0]
-                # answer = rnn_result[key][0][1][1]
-                # print(f"{i})")
-                # print(f">>>{question}\n\t - {answer}")
-                print(f"{i})")
-                print(rnn_result[key])
+                # print(type(rnn_result[key]))
+                # print(len(rnn_result[key]))
+                arr = rnn_result[key][1][0]
+                # print(arr)
+                question = arr[0]
+                answer = arr[1]
+                q_id = rnn_result[key][2]
+                # print()
+                print(f"{i}) [{q_id}] {question}\n{answer}")
                 print()
+                # print(f"{i})")
+                # print(rnn_result[key])
+                # print()
 
                 i += 1
                 if i == 5:
