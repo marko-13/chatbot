@@ -214,7 +214,7 @@ class RNNModel():
         X_train_para = np.array(X_train_para)
         print(X_train_para.shape)
         pair_y = np.array(pair_y)
-        malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32, epochs=50,
+        malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32, epochs=500,
         validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
 
         self.serialize_ann(malstm_model)
@@ -269,8 +269,12 @@ class RNNModel():
         # Convert words to their IDs
         word_id_list = []
         for tok in tokens:
+            if tok not in self.inv_token_dict.keys():
+                continue
             try:
                 word_id_list.append(self.inv_token_dict[tok])
+            except TypeError:
+                pass
             except KeyError:
                 word_id_list.append[0]
         
