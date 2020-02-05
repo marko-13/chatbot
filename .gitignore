@@ -3,3 +3,4 @@ objects/
 .idea
 log/
 serialization_folder
+glove/

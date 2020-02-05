@@ -70,27 +70,57 @@ class RNNModel():
 
         # DEFINE THE EMBEDDING
 
-        self.embedding_dim = len(all_tokens)
-        embeddings = 1 * np.random.rand(self.embedding_dim + 1, self.embedding_dim) 
-        embeddings[0] = 0
+        # - 1hot encoding
+        # self.embedding_dim = len(all_tokens)
+        # embeddings = 1 * np.random.rand(self.embedding_dim + 1, self.embedding_dim) 
+        # embeddings[0] = 0
 
         # Embeded 1-hot vector representation
-        print(len(token_dict.items()))
+        # print(len(token_dict.items()))
+        # for index, word in token_dict.items():
+        #     vec = [0 for i in range(self.embedding_dim)]
+        #     vec[index - 1] = 1
+        #     embeddings[index] = vec
+
+        # GloVe encoding
+        self.embedding_dim = 100
+
+        # DICT
+        self.glove_rep = self._load_glove()
+        # self.embeddings = self._load_glove()
+
+        # Convert the dict to a numpy matrix
+        self.embeddings = np.zeros((len(all_tokens) + 1, self.embedding_dim))
+
+        # i = 1
+        # # Word embeddings for the entire corpus
         for index, word in token_dict.items():
-            vec = [0 for i in range(self.embedding_dim)]
-            vec[index - 1] = 1
-            embeddings[index] = vec
+            try:
+                vec = self.glove_rep[word]
+                self.embeddings[index] = vec
+            except KeyError:
 
-        # Word embeddings for the entire corpus
-        self.embeddings = embeddings
-
-
+                pass
 
         if train:
             self.train_model(list_of_pairs, pair_y, X_train_orig, X_train_para)
         else:
             self.load_model()
 
+
+    def _load_glove(self):
+        '''
+        Read glove vectors frome the './glove/'
+        '''
+        f = open('glove/glove.6B.100d.txt','r')
+        model = {}
+        for line in f:
+            splitLine = line.split()
+            word = splitLine[0]
+            embedding = np.array([float(val) for val in splitLine[1:]])
+            model[word] = embedding
+        print("Done.",len(model)," words loaded!")
+        return model
 
     def get_model(self):
         return self.model
@@ -176,7 +206,7 @@ class RNNModel():
         X_train_para = np.array(X_train_para)
         print(X_train_para.shape)
         pair_y = np.array(pair_y)
-        malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32, epochs=500,
+        malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32, epochs=50,
         validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
 
         self.serialize_ann(malstm_model)
