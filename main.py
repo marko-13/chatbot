@@ -348,6 +348,7 @@ if __name__ == "__main__":
                 question = arr[0]
                 answer = arr[1]
                 q_id = rnn_result[key][2]
+
                 # print()
                 print(f"{i}) [{q_id}] {question}\n{answer}")
                 print()

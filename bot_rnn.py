@@ -79,12 +79,14 @@ class RNNModel():
         #     vec[index - 1] = 1
         #     embeddings[index] = vec
 
+
         # DICT
         self.glove_rep = self._load_glove()
         # self.embeddings = self._load_glove()
 
         # GloVe encoding
         self.embedding_dim = len(self.glove_rep['if'])
+
         # Convert the dict to a numpy matrix
         self.embeddings = np.zeros((len(all_tokens) + 1, self.embedding_dim))
 
@@ -107,7 +109,8 @@ class RNNModel():
         '''
         Read glove vectors frome the './glove/'
         '''
-        f = open('glove/glove.6B.200d.txt', 'r')
+
+        f = open('glove/glove.6B.200d.txt','r')
         model = {}
         for line in f:
             splitLine = line.split()
@@ -159,7 +162,8 @@ class RNNModel():
 
         malstm_model = Model([left_input, right_input], [malstm_distance])
 
-        optimizer = Adadelta(clipnorm=1.25, lr=0.001)
+
+        optimizer = Adadelta(clipnorm = 1.25, lr=0.001)
 
         def custom_loss(layer):
             def loss(label, distance):
@@ -196,9 +200,10 @@ class RNNModel():
         X_train_para = np.array(X_train_para)
         print(X_train_para.shape)
         pair_y = np.array(pair_y)
-        malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32,
-                                          epochs=2000,
-                                          validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
+
+        malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32, epochs=2000,
+        validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
+
 
         self.serialize_ann(malstm_model)
 
