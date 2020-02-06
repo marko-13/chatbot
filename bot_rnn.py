@@ -49,7 +49,6 @@ class RNNModel():
                     token_dict[brojac] = t
                     inv_token_dict[t] = brojac
                     brojac += 1
-                    # print(t)
                     all_tokens.append(t)
 
         self.token_dict = token_dict
@@ -61,24 +60,7 @@ class RNNModel():
             X_train_para.append(split_and_zero_padding(pairs[0], 15, token_dict, inv_token_dict))
             X_train_orig.append(split_and_zero_padding(pairs[1], 15, token_dict, inv_token_dict))
 
-        # print("TOKENS")
-        # print(all_tokens[:5])
-        # print('\n\n')
-
-        # DEFINE THE EMBEDDING
-
-        # - 1hot encoding
-        # self.embedding_dim = len(all_tokens)
-        # embeddings = 1 * np.random.rand(self.embedding_dim + 1, self.embedding_dim)
-        # embeddings[0] = 0
-
-        # Embeded 1-hot vector representation
-        # print(len(token_dict.items()))
-        # for index, word in token_dict.items():
-        #     vec = [0 for i in range(self.embedding_dim)]
-        #     vec[index - 1] = 1
-        #     embeddings[index] = vec
-
+        # DEFINE THE EMBEDDING - use the GloVe encoding
 
         # DICT
         self.glove_rep = self._load_glove()
@@ -150,15 +132,8 @@ class RNNModel():
 
         # Calculate distance from the outputs
 
-        # def _lambda_internal(x):
-        #     print(x)
-        #     print(type(x))
-        #     return exponent_neg_manhattan_distance(x[0], x[1])
-
-        # dist = Lambda(function = lambda x: )
         malstm_distance = Lambda(function=lambda x: exponent_neg_manhattan_distance(x[0], x[1]),
                                  output_shape=lambda x: (x[0][0], 1))([left_output, right_output])
-        # malstm_distance = Lambda(function=lambda x: _lambda_internal(x), output_shape=lambda x: (x[0][0], 1))([left_output, right_output])
 
         malstm_model = Model([left_input, right_input], [malstm_distance])
 
@@ -174,8 +149,6 @@ class RNNModel():
                 label = K.cast(label, tf.float32)
                 distance = K.cast(distance, tf.float32)
 
-                # if label == 0:
-                #     print(f"Dist: {distance}")
 
                 # return Tensor(label * 0.5 * (distance ** 2) + (1 - label) * 0.5 (max(0, 1.25 - distance) ** 2))
                 return label * 0.5 * K.square(distance) + (1 - label) * 0.5 * K.square(
@@ -183,7 +156,6 @@ class RNNModel():
 
             return loss
 
-        # malstm_model.compile(optimizer=optimizer, loss='mean_squared_error', metrics=['accuracy'])
         malstm_model.compile(optimizer=optimizer, loss=custom_loss(malstm_distance))
 
         malstm_model.summary()
@@ -207,10 +179,6 @@ class RNNModel():
 
         self.serialize_ann(malstm_model)
 
-        # self.model.save('./objects/SiameaseLSTM.h5')
-
-        # print("Training time finished.\n{} epochs in {}".format(n_epoch))
-
         self.model = malstm_model
 
     def process_input(self, user_input, high_recall_questions):
@@ -229,13 +197,6 @@ class RNNModel():
         for key in high_recall_questions:
             question = self._preprocess_user_input(high_recall_questions[key][0])
             question = [[item] for item in question]
-            # dist = self.model.predict(np.transpose(preprocessed_input))
-            # input = np.array([np.transpose(preprocessed_input), np.transpose(question)])
-            # input = np.array([preprocessed_input, question])
-            # print(input.shape)
-
-            # print(f"IN: {preprocessed_input}, type: {type(preprocessed_input)}")
-            # print(f"Q:  {question} type: {type(question)}")
 
             # WOW, trebalo je konvertovati u tf.Tensor
             dist = self.model([tf.convert_to_tensor(preprocessed_input), tf.convert_to_tensor(question)])
@@ -320,24 +281,11 @@ def split_and_zero_padding(quesion_paraquestion, max_seq_len, token_dict, inv_to
     word_embedding_matrix = ([word_embedding_matrix])
     ret_val = pad_sequences(word_embedding_matrix, padding='pre', truncating='post', maxlen=max_seq_len)
 
-    # embedding za recenicu
-    # print(word_embedding_matrix)
-    # embeddings za recenicu nakon paddinga
-    # print(ret_val)
     return ret_val
 
 
 # slicnost izmedju dva izlaza iz sijamske mreze
 def exponent_neg_manhattan_distance(left, right):
-    # print(left.shape)
-    # dist = K.exp(-K.sum(K.abs(left-right), axis=1, keepdims=True))
-    # dist = K.exp(-tf.math.reduce_sum(K.abs(left - right)))
-    # print(K.print_tensor(dist))
-    # print(type(dist))
-    # print(dist)
-
-    # Simpler:
-
     # TODO: Zasto eksponent ne valja. Ako je negde 0, onda ce to biti
     # e^0 sto je 1, pa to onda utice na "udaljavanje" 2 vektora (poveca distancu
     # izmedju 2 vektora bespotrebno)
@@ -351,5 +299,4 @@ def exponent_neg_manhattan_distance(left, right):
         dist = K.sum(K.abs(left - right))
     else:
         dist = K.sum(K.abs(left - right), axis=1)
-    # print(dist)
     return dist
