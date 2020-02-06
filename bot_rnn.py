@@ -224,6 +224,7 @@ class RNNModel():
             return ret_dict
         else:
             # BERT pretrained model 
+            ret_dict = {}
             for key in high_recall_questions:
                 question = high_recall_questions[key][0]
 
@@ -233,9 +234,23 @@ class RNNModel():
 
                 prediction = self.model(model_input['input_ids'], token_type_ids=model_input['token_type_ids'])[0]
 
+                similarity_probability = prediction[0][1]
+
+                
                 print(prediction)
                 print(prediction[0].argmax())
                 print(prediction[0].argmax().item())
+                print()
+                
+                ret_dict[key] = (similarity_probability, [high_recall_questions[key]], key)
+
+
+            ret_dict = {k: v for k, v in sorted(ret_dict.items(), key=lambda item: item[1][0])}
+
+            return ret_dict
+                # print(prediction)
+                # print(prediction[0].argmax())
+                # print(prediction[0].argmax().item())
             
 
     def _preprocess_user_input(self, user_input):

@@ -356,29 +356,29 @@ if __name__ == "__main__":
             for id in high_recall:
                 h_r_qa_pairs[id] = dict_orig[id]
 
-            rnn_model.process_input(q, h_r_qa_pairs)
+            rnn_result = rnn_model.process_input(q, h_r_qa_pairs)
 
-            # # print(rnn_result[:5])
-            # i = 0
-            # for key in rnn_result:
-            #     # print(type(rnn_result[key]))
-            #     # print(len(rnn_result[key]))
-            #     arr = rnn_result[key][1][0]
-            #     # print(arr)
-            #     question = arr[0]
-            #     answer = arr[1]
-            #     q_id = rnn_result[key][2]
+            # print(rnn_result[:5])
+            i = 0
+            for key in rnn_result:
+                # print(type(rnn_result[key]))
+                # print(len(rnn_result[key]))
+                arr = rnn_result[key][1][0]
+                # print(arr)
+                question = arr[0]
+                answer = arr[1]
+                q_id = rnn_result[key][2]
 
-            #     # print()
-            #     print(f"{i}) [{q_id}] {question}\n{answer}")
-            #     print()
-            #     # print(f"{i})")
-            #     # print(rnn_result[key])
-            #     # print()
+                # print()
+                print(f"{i}) [{q_id}] {question}\n{answer}")
+                print()
+                # print(f"{i})")
+                # print(rnn_result[key])
+                # print()
 
-            #     i += 1
-            #     if i == 5:
-            #         break
+                i += 1
+                if i == 5:
+                    break
 
             print("Type in your question:")
             q = input()
