@@ -19,6 +19,9 @@ from tensorflow import Tensor
 
 import os
 
+# BERT
+from transformers import *
+
 
 class RNNModel():
     '''
@@ -33,59 +36,70 @@ class RNNModel():
             pomocu RNN-a. (Pogledati bot.py fajl, funkcija 'process input')
     '''
 
-    def __init__(self, list_of_pairs, pair_y, train=False):
+    def __init__(self, list_of_pairs, pair_y, train=False, bert=False):
 
-        # find all disinct words(tokens) from original questions
-        token_dict = {}
-        inv_token_dict = {}
-        all_tokens = []
-        brojac = 1
-        for question in Dataset.get_original_dataset_questions(load_object("objects/rnn_dataset_object.pickle")):
-            tokens = tf.keras.preprocessing.text.text_to_word_sequence(question,
-                                                                       filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
-                                                                       lower=True, split=' ')
-            for t in tokens:
-                if t not in all_tokens:
-                    token_dict[brojac] = t
-                    inv_token_dict[t] = brojac
-                    brojac += 1
-                    all_tokens.append(t)
+        self.bert = bert
 
-        self.token_dict = token_dict
-        self.inv_token_dict = inv_token_dict
+        if not bert:
+            # find all disinct words(tokens) from original questions
+            token_dict = {}
+            inv_token_dict = {}
+            all_tokens = []
+            brojac = 1
+            for question in Dataset.get_original_dataset_questions(load_object("objects/rnn_dataset_object.pickle")):
+                tokens = tf.keras.preprocessing.text.text_to_word_sequence(question,
+                                                                        filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
+                                                                        lower=True, split=' ')
+                for t in tokens:
+                    if t not in all_tokens:
+                        token_dict[brojac] = t
+                        inv_token_dict[t] = brojac
+                        brojac += 1
+                        all_tokens.append(t)
 
-        X_train_para = []
-        X_train_orig = []
-        for pairs in list_of_pairs:
-            X_train_para.append(split_and_zero_padding(pairs[0], 15, token_dict, inv_token_dict))
-            X_train_orig.append(split_and_zero_padding(pairs[1], 15, token_dict, inv_token_dict))
+            self.token_dict = token_dict
+            self.inv_token_dict = inv_token_dict
 
-        # DEFINE THE EMBEDDING - use the GloVe encoding
+            X_train_para = []
+            X_train_orig = []
+            for pairs in list_of_pairs:
+                X_train_para.append(split_and_zero_padding(pairs[0], 15, token_dict, inv_token_dict))
+                X_train_orig.append(split_and_zero_padding(pairs[1], 15, token_dict, inv_token_dict))
 
-        # DICT
-        self.glove_rep = self._load_glove()
-        # self.embeddings = self._load_glove()
+            # DEFINE THE EMBEDDING - use the GloVe encoding
 
-        # GloVe encoding
-        self.embedding_dim = len(self.glove_rep['if'])
+            # DICT
+            self.glove_rep = self._load_glove()
+            # self.embeddings = self._load_glove()
 
-        # Convert the dict to a numpy matrix
-        self.embeddings = np.zeros((len(all_tokens) + 1, self.embedding_dim))
+            # GloVe encoding
+            self.embedding_dim = len(self.glove_rep['if'])
 
-        # i = 1
-        # # Word embeddings for the entire corpus
-        for index, word in token_dict.items():
-            try:
-                vec = self.glove_rep[word]
-                self.embeddings[index] = vec
-            except KeyError:
+            # Convert the dict to a numpy matrix
+            self.embeddings = np.zeros((len(all_tokens) + 1, self.embedding_dim))
 
-                pass
+            # i = 1
+            # # Word embeddings for the entire corpus
+            for index, word in token_dict.items():
+                try:
+                    vec = self.glove_rep[word]
+                    self.embeddings[index] = vec
+                except KeyError:
 
-        if train:
-            self.train_model(list_of_pairs, pair_y, X_train_orig, X_train_para)
+                    pass
+
+            if train:
+                self.train_model(list_of_pairs, pair_y, X_train_orig, X_train_para)
+            else:
+                self.load_model()
+
         else:
-            self.load_model()
+            # BERT
+            self.tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+            self.model = TFBertForSequenceClassification.from_pretrained('bert-base-cased')
+
+            self.model.save_pretrained('./objects/')
+            self.model = BertForSequenceClassification.from_pretrained('./objects/', from_tf=True)
 
     def _load_glove(self):
         '''
@@ -190,23 +204,39 @@ class RNNModel():
             dict {key, (distance, [question, answer])}: Questions most similar to the user input
         '''
 
-        preprocessed_input = self._preprocess_user_input(user_input)
-        preprocessed_input = [[item] for item in preprocessed_input]
+        if not self.bert:
+            preprocessed_input = self._preprocess_user_input(user_input)
+            preprocessed_input = [[item] for item in preprocessed_input]
 
-        ret_dict = {}
-        for key in high_recall_questions:
-            question = self._preprocess_user_input(high_recall_questions[key][0])
-            question = [[item] for item in question]
+            ret_dict = {}
+            for key in high_recall_questions:
+                question = self._preprocess_user_input(high_recall_questions[key][0])
+                question = [[item] for item in question]
 
-            # WOW, trebalo je konvertovati u tf.Tensor
-            dist = self.model([tf.convert_to_tensor(preprocessed_input), tf.convert_to_tensor(question)])
-            # print(dist)
-            ret_dict[key] = (dist, [high_recall_questions[key]], key)
+                # WOW, trebalo je konvertovati u tf.Tensor
+                dist = self.model([tf.convert_to_tensor(preprocessed_input), tf.convert_to_tensor(question)])
+                # print(dist)
+                ret_dict[key] = (dist, [high_recall_questions[key]], key)
 
-        # Sort by distance
-        ret_dict = {k: v for k, v in sorted(ret_dict.items(), key=lambda item: item[1][0])}
+            # Sort by distance
+            ret_dict = {k: v for k, v in sorted(ret_dict.items(), key=lambda item: item[1][0])}
 
-        return ret_dict
+            return ret_dict
+        else:
+            # BERT pretrained model 
+            for key in high_recall_questions:
+                question = high_recall_questions[key][0]
+
+                print(f"Processing: {question}")
+
+                model_input = self.tokenizer.encode_plus(user_input, question, add_special_tokens=True, return_tensors='pt')
+
+                prediction = self.model(model_input['input_ids'], token_type_ids=model_input['token_type_ids'])[0]
+
+                print(prediction)
+                print(prediction[0].argmax())
+                print(prediction[0].argmax().item())
+            
 
     def _preprocess_user_input(self, user_input):
         tokens = tf.keras.preprocessing.text.text_to_word_sequence(user_input,
