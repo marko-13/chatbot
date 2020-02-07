@@ -17,6 +17,8 @@ from tensorflow.keras.optimizers import Adadelta
 
 from tensorflow import Tensor
 
+import torch
+
 import os
 
 # BERT
@@ -34,13 +36,75 @@ class RNNModel():
         3. Napisati funkciju koja prima string (input od korisnika), iskorisit high recall
             algoritam za pronalazenje top 100 slicnih pitanja, pa iz njih izvlaci najbolje
             pomocu RNN-a. (Pogledati bot.py fajl, funkcija 'process input')
+
+        4. (NOVO) Treba koristiti BeroTokenizer.encode()
     '''
 
-    def __init__(self, list_of_pairs, pair_y, train=False, bert=False):
+    def __init__(self, list_of_pairs, pair_y, train=False, bert=False, hybrid=False):
 
         self.bert = bert
+        self.hybrid = hybrid
 
-        if not bert:
+        if bert:
+            # BERT
+            self.tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+            self.model = TFBertForSequenceClassification.from_pretrained('bert-base-cased')
+
+            self.model.save_pretrained('./objects/')
+            self.model = BertForSequenceClassification.from_pretrained('./objects/', from_tf=True)
+
+        elif hybrid:
+            # Use the BERT encoder to train our RNN
+            self.tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+            self.bert_model = BertModel.from_pretrained('bert-base-cased')
+            max_input_len = 40
+  
+
+         
+            X_train_para = []
+            X_train_orig = []
+            def encode_fun(x):
+                # Enkodiranje svake reci pomocu BERT-a 
+                input_ids = torch.tensor(self.tokenizer.encode(x, max_length=40, pad_to_max_length=True)).unsqueeze(0)
+                outputs = self.bert_model(input_ids)
+                # Uzimamo poslednji output, pretvaramo u numpy
+                last_hidden_states = outputs[0][0].detach().numpy()
+                return last_hidden_states
+
+
+
+            for pairs in list_of_pairs:
+                X_train_para.append(encode_fun(pairs[0]))
+                X_train_orig.append(encode_fun(pairs[1]))
+            # encoded_right = self.tokenizer.encode(right_input, max_length=max_input_len, pad_to_max_length=True).unsqueeze(0)
+
+            print(X_train_para[0])
+
+            X_train_orig = [encode_fun(x) for x in X_train_orig]
+            X_train_para = [encode_fun(x) for x in X_train_para]
+            X_train_orig = np.array(X_train_orig)
+            X_train_para = np.array(X_train_para)
+            if train:
+                self.train_model(list_of_pairs, pair_y, X_train_orig, X_train_para)
+
+            # input_ids = torch.tensor(self.tokenizer.encode("yes i love embeddings", max_length=40, pad_to_max_length=True)).unsqueeze(0)
+            # print(len(input_ids))
+            # print(input_ids)
+            # print(input_ids.shape)
+            # print(self.tokenizer.tokenize("yes i love embeddings"))
+            # outputs = self.bert_model(input_ids)
+            # last_hidden_states = outputs[0]
+
+            # print(self.bert_model.transformer)
+
+            # print(outputs[2].shape)
+            # print(outputs[2])
+            # print(outputs[1])
+            # print(last_hidden_states.shape)
+            # print(last_hidden_states)
+            # print(last_hidden_states[0].detach().numpy())
+
+        else:
             # find all disinct words(tokens) from original questions
             token_dict = {}
             inv_token_dict = {}
@@ -93,13 +157,6 @@ class RNNModel():
             else:
                 self.load_model()
 
-        else:
-            # BERT
-            self.tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-            self.model = TFBertForSequenceClassification.from_pretrained('bert-base-cased')
-
-            self.model.save_pretrained('./objects/')
-            self.model = BertForSequenceClassification.from_pretrained('./objects/', from_tf=True)
 
     def _load_glove(self):
         '''
@@ -126,74 +183,132 @@ class RNNModel():
 
     def train_model(self, list_of_pairs, pair_y, X_train_orig, X_train_para):
 
-        left_input = Input(shape=(15,), dtype="int32")
-        right_input = Input(shape=(15,), dtype="int32")
-
-        embedding_layer = Embedding(len(self.embeddings), output_dim=self.embedding_dim, weights=[self.embeddings],
-                                    input_length=15, trainable=False)
-
-        encoded_left = embedding_layer(left_input)
-        encoded_right = embedding_layer(right_input)
-
-        # Define LSTM layer
-
-        shared_lstm = LSTM(128)
-
-        # Propusti enkodovane recenice
-
-        left_output = shared_lstm(encoded_left)
-        right_output = shared_lstm(encoded_right)
-
-        # Calculate distance from the outputs
-
-        malstm_distance = Lambda(function=lambda x: exponent_neg_manhattan_distance(x[0], x[1]),
-                                 output_shape=lambda x: (x[0][0], 1))([left_output, right_output])
-
-        malstm_model = Model([left_input, right_input], [malstm_distance])
-
-
-        optimizer = Adadelta(clipnorm = 1.25, lr=0.001)
-
         def custom_loss(layer):
-            def loss(label, distance):
-                '''
-                label: - 0: not similar
-                       - 1: similar
-                '''
-                label = K.cast(label, tf.float32)
-                distance = K.cast(distance, tf.float32)
+                def loss(label, distance):
+                    '''
+                    label: - 0: not similar
+                        - 1: similar
+                    '''
+                    label = K.cast(label, tf.float32)
+                    distance = K.cast(distance, tf.float32)
 
 
-                # return Tensor(label * 0.5 * (distance ** 2) + (1 - label) * 0.5 (max(0, 1.25 - distance) ** 2))
-                return label * 0.5 * K.square(distance) + (1 - label) * 0.5 * K.square(
-                    K.maximum(K.zeros_like(distance, dtype=tf.float32), (0.5 - distance)))  # NOT THE EXACT
+                    # return Tensor(label * 0.5 * (distance ** 2) + (1 - label) * 0.5 (max(0, 1.25 - distance) ** 2))
+                    return label * 0.5 * K.square(distance) + (1 - label) * 0.5 * K.square(
+                        K.maximum(K.zeros_like(distance, dtype=tf.float32), (0.5 - distance)))  # NOT THE EXACT
 
-            return loss
+                return loss
 
-        malstm_model.compile(optimizer=optimizer, loss=custom_loss(malstm_distance))
+        if self.hybrid:
 
-        malstm_model.summary()
-
-        # Start training
-        # TODO
-        # jos treba istrenirati mrezu, podaci su spremni, padding odradjen, word embedding isto, sve je stavljeno
-        # u liste odgovarajuce duzine
-        X_train_orig = [x[0] for x in X_train_orig]
-        X_train_para = [x[0] for x in X_train_para]
-        X_train_orig = np.array(X_train_orig)
-        print(X_train_orig.shape)
-        print(X_train_orig[0])
-        X_train_para = np.array(X_train_para)
-        print(X_train_para.shape)
-        pair_y = np.array(pair_y)
-
-        malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32, epochs=2000,
-        validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
+            max_input_len = 40
 
 
-        self.serialize_ann(malstm_model)
+            left_input = Input(shape=(max_input_len,), dtype="float32")
+            right_input = Input(shape=(max_input_len,), dtype="float32")
 
-        self.model = malstm_model
+            
+            
+            # Define LSTM layer
+
+            shared_lstm = LSTM(128)
+
+            # Propusti enkodovane recenice
+
+            left_output = shared_lstm(left_input)
+            right_output = shared_lstm(right_input)
+
+
+            malstm_distance = Lambda(function=lambda x: exponent_neg_manhattan_distance(x[0], x[1]),
+                                    output_shape=lambda x: (x[0][0], 1))([left_output, right_output])
+
+            malstm_model = Model([left_input, right_input], [malstm_distance])
+
+
+            optimizer = Adadelta(clipnorm = 1.25, lr=0.001)
+
+            
+
+            malstm_model.compile(optimizer=optimizer, loss=custom_loss(malstm_distance))
+
+            malstm_model.summary()
+
+            X_train_orig = [x[0] for x in X_train_orig]
+            X_train_para = [x[0] for x in X_train_para]
+            # print(X_train_orig.shape)
+            # print(X_train_orig[0])
+            # print(X_train_para.shape)
+            pair_y = np.array(pair_y)
+
+            # Embed using bert:
+
+            
+
+            malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32, epochs=2000,
+            validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
+
+
+            self.serialize_ann(malstm_model)
+
+            self.model = malstm_model
+
+        else:
+
+
+            left_input = Input(shape=(15,), dtype="int32")
+            right_input = Input(shape=(15,), dtype="int32")
+
+            embedding_layer = Embedding(len(self.embeddings), output_dim=self.embedding_dim, weights=[self.embeddings],
+                                        input_length=15, trainable=False)
+
+            encoded_left = embedding_layer(left_input)
+            encoded_right = embedding_layer(right_input)
+
+            # Define LSTM layer
+
+            shared_lstm = LSTM(128)
+
+            # Propusti enkodovane recenice
+
+            left_output = shared_lstm(encoded_left)
+            right_output = shared_lstm(encoded_right)
+
+            # Calculate distance from the outputs
+
+            malstm_distance = Lambda(function=lambda x: exponent_neg_manhattan_distance(x[0], x[1]),
+                                    output_shape=lambda x: (x[0][0], 1))([left_output, right_output])
+
+            malstm_model = Model([left_input, right_input], [malstm_distance])
+
+
+            optimizer = Adadelta(clipnorm = 1.25, lr=0.001)
+
+            
+
+            malstm_model.compile(optimizer=optimizer, loss=custom_loss(malstm_distance))
+
+            malstm_model.summary()
+
+            # Start training
+            # TODO
+            # jos treba istrenirati mrezu, podaci su spremni, padding odradjen, word embedding isto, sve je stavljeno
+            # u liste odgovarajuce duzine
+            X_train_orig = [x[0] for x in X_train_orig]
+            X_train_para = [x[0] for x in X_train_para]
+            X_train_orig = np.array(X_train_orig)
+            print(X_train_orig.shape)
+            print(X_train_orig[0])
+            X_train_para = np.array(X_train_para)
+            print(X_train_para.shape)
+            pair_y = np.array(pair_y)
+
+            malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32, epochs=2000,
+            validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
+
+
+            self.serialize_ann(malstm_model)
+
+            self.model = malstm_model
 
     def process_input(self, user_input, high_recall_questions):
         '''
