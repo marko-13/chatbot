@@ -308,7 +308,6 @@ def rnn_training(train=True):
 
 
 if __name__ == "__main__":
-
     if 'bert' in sys.argv:
         dict_orig = index_dataset()
 
@@ -386,10 +385,10 @@ if __name__ == "__main__":
         
 
     elif 'train' in sys.argv:
-        # Training
+        # Train our RNN implementation
         model = rnn_training()
     else:
-        # Live use
+        # Use our RNN implementation
 
         model_wrapper = rnn_training(train=False)
         model = model_wrapper.get_model()
