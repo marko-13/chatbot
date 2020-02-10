@@ -4,3 +4,4 @@ objects/
 log/
 serialization_folder
 glove/
+elmo/
