@@ -56,6 +56,7 @@ class RNNModel():
         elif hybrid:
             # Use the BERT encoder to train our RNN
             self.tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+            self.tokenizer.padding_side = 'left'
             self.bert_model = BertModel.from_pretrained('bert-base-cased')
             max_input_len = 40
   
@@ -63,6 +64,10 @@ class RNNModel():
          
             X_train_para = []
             X_train_orig = []
+
+            # for question in Dataset.get_original_dataset_questions(load_object("objects/rnn_dataset_object.pickle")):
+                # print(question)
+
             def encode_fun(x):
                 # Enkodiranje svake reci pomocu BERT-a 
                 input_ids = torch.tensor(self.tokenizer.encode(x, max_length=40, pad_to_max_length=True)).unsqueeze(0)
@@ -73,36 +78,29 @@ class RNNModel():
 
 
 
-            for pairs in list_of_pairs:
-                X_train_para.append(encode_fun(pairs[0]))
-                X_train_orig.append(encode_fun(pairs[1]))
+            for pair in list_of_pairs:
+                X_train_para.append(pair[0])
+                X_train_orig.append(pair[1])
+                # X_train_para.append
+                # pass
             # encoded_right = self.tokenizer.encode(right_input, max_length=max_input_len, pad_to_max_length=True).unsqueeze(0)
 
-            print(X_train_para[0])
 
             X_train_orig = [encode_fun(x) for x in X_train_orig]
             X_train_para = [encode_fun(x) for x in X_train_para]
+            print(X_train_para[0])
             X_train_orig = np.array(X_train_orig)
             X_train_para = np.array(X_train_para)
+
+            X_train_orig = K.constant(X_train_orig)
+            X_train_para = K.constant(X_train_para)
+
+            print(f"Shape: {X_train_orig.shape}")
+            print(X_train_para[0])
             if train:
                 self.train_model(list_of_pairs, pair_y, X_train_orig, X_train_para)
-
-            # input_ids = torch.tensor(self.tokenizer.encode("yes i love embeddings", max_length=40, pad_to_max_length=True)).unsqueeze(0)
-            # print(len(input_ids))
-            # print(input_ids)
-            # print(input_ids.shape)
-            # print(self.tokenizer.tokenize("yes i love embeddings"))
-            # outputs = self.bert_model(input_ids)
-            # last_hidden_states = outputs[0]
-
-            # print(self.bert_model.transformer)
-
-            # print(outputs[2].shape)
-            # print(outputs[2])
-            # print(outputs[1])
-            # print(last_hidden_states.shape)
-            # print(last_hidden_states)
-            # print(last_hidden_states[0].detach().numpy())
+            else:
+                self.load_model('rnn_bert')
 
         else:
             # find all disinct words(tokens) from original questions
@@ -176,10 +174,10 @@ class RNNModel():
     def get_model(self):
         return self.model
 
-    def load_model(self):
+    def load_model(self, name):
 
-        if os.path.exists('serialization_folder/neuronska.json'):
-            self.model = self.load_trained_ann()
+        if os.path.exists(f'serialization_folder/{name}.json'):
+            self.model = self.load_trained_ann(name)
 
     def train_model(self, list_of_pairs, pair_y, X_train_orig, X_train_para):
 
@@ -204,8 +202,8 @@ class RNNModel():
             max_input_len = 40
 
 
-            left_input = Input(shape=(max_input_len,), dtype="float32")
-            right_input = Input(shape=(max_input_len,), dtype="float32")
+            left_input = Input(shape=(max_input_len,768), dtype="float32")
+            right_input = Input(shape=(max_input_len,768), dtype="float32")
 
             
             
@@ -233,8 +231,8 @@ class RNNModel():
 
             malstm_model.summary()
 
-            X_train_orig = [x[0] for x in X_train_orig]
-            X_train_para = [x[0] for x in X_train_para]
+            # X_train_orig = [x[0] for x in X_train_orig]
+            # X_train_para = [x[0] for x in X_train_para]
             # print(X_train_orig.shape)
             # print(X_train_orig[0])
             # print(X_train_para.shape)
@@ -242,13 +240,13 @@ class RNNModel():
 
             # Embed using bert:
 
-            
+            print(f"Shape 2: {X_train_orig.shape}")
 
             malstm_trained = malstm_model.fit([X_train_orig[:130], X_train_para[:130]], pair_y[:130], batch_size=32, epochs=2000,
             validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
 
 
-            self.serialize_ann(malstm_model)
+            self.serialize_ann(malstm_model, 'rnn_bert')
 
             self.model = malstm_model
 
@@ -306,7 +304,7 @@ class RNNModel():
             validation_data=([X_train_orig[130:], X_train_para[130:]], pair_y[130:]))
 
 
-            self.serialize_ann(malstm_model)
+            self.serialize_ann(malstm_model, 'rnn_w2v')
 
             self.model = malstm_model
 
@@ -318,8 +316,40 @@ class RNNModel():
         Returns:
             dict {key, (distance, [question, answer])}: Questions most similar to the user input
         '''
+        if self.hybrid:
 
-        if not self.bert:
+            print("Processing input as hybrid network...")
+            def encode_fun(x):
+                # Enkodiranje svake reci pomocu BERT-a 
+                input_ids = torch.tensor(self.tokenizer.encode(x, max_length=40, pad_to_max_length=True)).unsqueeze(0)
+                print(f"Encoded question:\n{input_ids}")
+                outputs = self.bert_model(input_ids)
+                # Uzimamo poslednji output, pretvaramo u numpy
+                last_hidden_states = outputs[0][0].detach().numpy()
+                return last_hidden_states
+
+            encoded_input = np.array([encode_fun(user_input)])
+            print(f"Encoded input shape: {encoded_input.shape}")
+
+            ret_dict = {}
+            for key in high_recall_questions:
+                question = high_recall_questions[key][0]
+
+                print(f"Processing {question}")
+                encoded_question = np.array([encode_fun(question)])
+                print(f"Encoded question shape: {encoded_question.shape}")
+                model_input = [encoded_input, encoded_question]
+                # print(f"Model input shape: {model_input.shape}")
+                dist = self.model(model_input)
+
+                # dist = prediction[0][1]
+                ret_dict[key] = (dist, [high_recall_questions[key]], key)
+
+            ret_dict = {k: v for k, v in sorted(ret_dict.items(), key=lambda item: item[1][0])}
+
+            return ret_dict
+
+        elif not self.bert:
             preprocessed_input = self._preprocess_user_input(user_input)
             preprocessed_input = [[item] for item in preprocessed_input]
 
@@ -337,6 +367,8 @@ class RNNModel():
             ret_dict = {k: v for k, v in sorted(ret_dict.items(), key=lambda item: item[1][0])}
 
             return ret_dict
+
+
         else:
             # BERT pretrained model 
             ret_dict = {}
@@ -391,23 +423,23 @@ class RNNModel():
 
         return padded[0]
 
-    def serialize_ann(self, rnn):
+    def serialize_ann(self, rnn, name):
         # serijalizuj arhitekturu neuronske mreze u JSON fajl
         model_json = rnn.to_json()
-        with open("serialization_folder/neuronska.json", "w") as json_file:
+        with open(f"serialization_folder/{name}.json", "w") as json_file:
             json_file.write(model_json)
         # serijalizuj tezine u HDF5 fajl
-        rnn.save_weights("serialization_folder/neuronska.h5")
+        rnn.save_weights(f"serialization_folder/{name}.h5")
 
-    def load_trained_ann(self):
+    def load_trained_ann(self, name):
         try:
             # Ucitaj JSON i kreiraj arhitekturu neuronske mreze na osnovu njega
-            json_file = open('serialization_folder/neuronska.json', 'r')
+            json_file = open(f'serialization_folder/{name}.json', 'r')
             loaded_model_json = json_file.read()
             json_file.close()
             ann = model_from_json(loaded_model_json)
             # ucitaj tezine u prethodno kreirani model
-            ann.load_weights("serialization_folder/neuronska.h5")
+            ann.load_weights(f"serialization_folder/{name}.h5")
             print("Istrenirani model uspesno ucitan.")
             return ann
         except Exception as e:
@@ -455,7 +487,10 @@ def exponent_neg_manhattan_distance(left, right):
     # Shape za train: (160, 15)
     # Shape of user input: (15, 128)
     # NOTE: Verovatno treba malo korigovati process_input
+    print(f"Computing Manhattan for input tensors: {left.shape} {right.shape}")
     if left.shape[0] is 15:
+        dist = K.sum(K.abs(left - right))
+    elif left.shape[0] is 40:
         dist = K.sum(K.abs(left - right))
     else:
         dist = K.sum(K.abs(left - right), axis=1)

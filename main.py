@@ -385,6 +385,7 @@ if __name__ == "__main__":
         
     elif 'hybrid' in sys.argv:
         # Use BERT as an word encoder, 
+        # and our RNN for distance measuring
         dict_orig = index_dataset()
 
 
@@ -413,6 +414,8 @@ if __name__ == "__main__":
             pair_y.append((next_pair[1]))
             list_of_pairs.append(pair)
 
+        # print(list_of_pairs[0])
+
         # print(list_of_pairs)
         # print(pair_y)
         if 'train' in sys.argv:
@@ -420,6 +423,54 @@ if __name__ == "__main__":
         else:
             rnn_model = RNNModel(list_of_pairs, pair_y, hybrid=True)
 
+        model = rnn_model.get_model()
+
+        dataset = index_dataset()
+
+        # Use one of the older bots for the high recall algorithm
+        loader_bot = get_bot(dataset, 'word2vec', False)
+
+        print("Type in your question:")
+        q = input()
+        print()
+
+        while q is not 'q':
+            # High recall
+            high_recall = loader_bot.get_k_nearest_ids(q)
+            # print(a)
+
+            # Extract q/a pairs
+            h_r_qa_pairs = {}
+            for id in high_recall:
+                h_r_qa_pairs[id] = dataset[id]
+
+            rnn_result = rnn_model.process_input(q, h_r_qa_pairs)
+
+            # print(rnn_result[:5])
+            i = 0
+            for key in rnn_result:
+                # print(type(rnn_result[key]))
+                # print(len(rnn_result[key]))
+                arr = rnn_result[key][1][0]
+                # print(arr)
+                question = arr[0]
+                answer = arr[1]
+                q_id = rnn_result[key][2]
+
+                # print()
+                print(f"{i}) [{q_id}] {question}\n{answer}")
+                print()
+                # print(f"{i})")
+                # print(rnn_result[key])
+                # print()
+
+                i += 1
+                if i == 5:
+                    break
+
+            print("Type in your question:")
+            q = input()
+            print()
 
     elif 'train' in sys.argv:
         # Train our RNN implementation
