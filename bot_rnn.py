@@ -17,6 +17,8 @@ from tensorflow.keras.optimizers import Adadelta
 
 from tensorflow import Tensor
 
+import tensorflow_hub as hub
+
 import torch
 
 import os
@@ -40,10 +42,11 @@ class RNNModel():
         4. (NOVO) Treba koristiti BeroTokenizer.encode()
     '''
 
-    def __init__(self, list_of_pairs, pair_y, train=False, bert=False, hybrid=False):
+    def __init__(self, list_of_pairs, pair_y, train=False, bert=False, hybrid=False, elmo=False):
 
         self.bert = bert
         self.hybrid = hybrid
+        self.elmo = elmo
 
         if bert:
             # BERT
@@ -101,6 +104,40 @@ class RNNModel():
                 self.train_model(list_of_pairs, pair_y, X_train_orig, X_train_para)
             else:
                 self.load_model('rnn_bert')
+
+        elif self.elmo:
+            tf.compat.v1.disable_eager_execution()
+            self.elmo_model = hub.Module('elmo/', trainable=False)
+
+            X_train_para = []
+            X_train_orig = []
+            for pair in list_of_pairs:
+                X_train_para.append(pair[0])
+                X_train_orig.append(pair[1])
+
+            # Encode the sentence pairs
+
+
+            def embed_elmo(sentence):
+                embedded = self.elmo_model([sentence], signature='default', as_dict=True)['elmo'][0]
+                print(f"Embedded len: {embedded.shape}")
+                return embedded
+                # return self.elmo_model(inputs={"tokens": [sentence.split(" ")], "sequence_len": [40]}, signature="default", as_dict=True)['elmo'][0]
+
+            X_train_para = np.array([embed_elmo(x) for x in X_train_para])
+
+            print(f"Total shape: {X_train_para.shape}")
+
+            X_train_orig = [embed_elmo(x) for x in X_train_orig]
+
+            print("PROSAO EMBEDDING")
+
+            # TODO: pad the inputs to size 40
+
+            if train:
+                self.train_model(list_of_pairs, pair_y, X_train_orig, X_train_para)
+            else:
+                self.load_model('rnn_elmo')
 
         else:
             # find all disinct words(tokens) from original questions
@@ -249,6 +286,13 @@ class RNNModel():
             self.serialize_ann(malstm_model, 'rnn_bert')
 
             self.model = malstm_model
+
+        if self.elmo:
+
+            max_input_len = 40
+
+            left_input = Input(shape=(max_input_len,1024), dtype="float32")
+            right_input = Input(shape=(max_input_len,1024), dtype="float32")
 
         else:
 
