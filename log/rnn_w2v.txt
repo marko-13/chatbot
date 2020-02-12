@@ -1,0 +1,11 @@
+15453,0 # Nadje varijantu sa 'my' -> Is MY fixed annuity safe
+17884,0
+21068,0
+25381,0
+20565,-1 # Ne nadje niko sa scuba diving, ali nadje neke druge sa "covered by life insurance"
+25379,0
+9783,0 # Jedini pronasao "blanket life insurance" cini mi se
+25650,0 # Takodje i za jumbo life insurance?
+11963,-1 # Umesto 'parent' nasao je sve sa 'boyfriend'
+49,-1 # Nije nasao odgovarajuce 401k, ali svi odgovori su se 401k
+746,2

@@ -248,9 +248,9 @@ def testing():
     print("Used algorithm: " + str(algorithm))
 
     # Questions for testing accuracy
-    wanted_questions = [("Is fixed annuity safe?", [15453]), 
+    wanted_questions = [("Is fixed annuity safe?", [15453, 25552]), 
                         ("Can I opt out of health insurance", [17884]), 
-                        ("How to become a medicare expert", [22917, 22918]), 
+                        ("How to become a medicare expert", [21068, 22917, 22918]), 
                         ("Can disability insurance be deducted", [25381]),
                         ("Is scuba diving covered by life insurance", [num for num in range(20565, 20569)]),
                         ("is there life insurance for elderly", [25379, 25380]),

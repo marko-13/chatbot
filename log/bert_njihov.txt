@@ -1,0 +1,12 @@
+Indeksiranje pocinje od 0. (-1 => pitanje nije pronadjeno)
+15453,-1
+17884,2
+21068,0
+23581,0
+20565,-1 ... Scuba Diving nije nasao...
+25379,0
+9783,-1
+25650,-1
+11963,-1
+49,3
+746,-1

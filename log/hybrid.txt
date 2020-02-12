@@ -1,0 +1,11 @@
+15453,-1
+17884,0
+21068,0
+25381,-1
+20565,-1
+25379,-1
+9783,-1
+25650,-1
+11963,-1
+49,-1 # Pronalazio je odgovore sa "roth 401k", ne ove koje smo mi trazili
+746,-1 # Pronalazio je sve vezano samo za disability insurance

@@ -190,7 +190,7 @@ class RNNModel():
             if train:
                 self.train_model(list_of_pairs, pair_y, X_train_orig, X_train_para)
             else:
-                self.load_model()
+                self.load_model('neuronska')
 
 
     def _load_glove(self):
