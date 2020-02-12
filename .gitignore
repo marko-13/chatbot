@@ -1,7 +1,6 @@
 __pycache__
 objects/
 .idea
-log/
 serialization_folder
 glove/
 elmo/
